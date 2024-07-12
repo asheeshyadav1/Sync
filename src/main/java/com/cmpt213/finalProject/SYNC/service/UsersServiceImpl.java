@@ -24,7 +24,8 @@ public class UsersServiceImpl implements UsersService {
     private EntityManager entityManager;
 
     @Override
-    public UserModel registerUser(String login, String password, String email, String name,  String gender, String dob, String location, String phoneNumber) {
+    public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
+            String location, String phoneNumber) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -68,20 +69,20 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Override
-    public void activateUser(Integer id){
+    public void activateUser(Integer id) {
         UserModel user = userRepository.findById(id).orElse(null);
         if (user != null) {
             user.setActive(true);
             userRepository.save(user);
         }
     }
-    
+
     // Method to update user information
     public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location) {
         Optional<UserModel> optionalUser = userRepository.findByLogin(login);
 
         System.out.println(login);
-    
+
         if (optionalUser.isPresent()) {
             UserModel user = optionalUser.get();
             // Update the user fields
@@ -119,6 +120,7 @@ public class UsersServiceImpl implements UsersService {
             UserFriendRequestKey friendRequestKey = new UserFriendRequestKey(sessionUser.getId(), user.getId());
             if (!sessionUser.getFriendRequests().contains(friendRequestKey)) {
                 sessionUser.getFriendRequests().add(friendRequestKey);
+                user.getRequests().add(new UserFriendRequestKey(user.getId(), sessionUser.getId()));
                 userRepository.save(sessionUser);
                 return true;
             }
@@ -129,9 +131,11 @@ public class UsersServiceImpl implements UsersService {
     @Transactional
     public boolean deleteFriendRequest(Integer userId, Integer friendRequestId) {
         UserModel user = userRepository.findById(userId).orElse(null);
+        UserModel sentUser = userRepository.findById(friendRequestId).orElse(null);
         if (user != null) {
             UserFriendRequestKey key = new UserFriendRequestKey(userId, friendRequestId);
-            if (user.getFriendRequests().remove(key)) {
+            UserFriendRequestKey key1 = new UserFriendRequestKey(friendRequestId, userId);
+            if (user.getFriendRequests().remove(key) && sentUser.getRequests().remove(key1)) {
                 userRepository.save(user);
                 return true;
             }
@@ -144,8 +148,26 @@ public class UsersServiceImpl implements UsersService {
         List<UserFriendRequestKey> friendRequestIds = sessionUser.getFriendRequests();
         return friendRequestIds.stream()
                 .map(key -> userRepository.findById(key.getFriendRequestId().longValue()).orElse(null))
-                .filter(user -> user != null)
-                .collect(Collectors.toList());
+                .filter(user -> user != null).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<UserModel> findFriendRequests(UserModel sessionUser){
+        List<UserFriendRequestKey> friendRequestIds = sessionUser.getRequests();
+        return friendRequestIds.stream()
+                .map(key -> userRepository.findById(key.getFriendRequestId().longValue()).orElse(null))
+                .filter(user -> user != null).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserModel> findAllUsersExcludingSessionUser(UserModel sessionUser) {
+        List<UserFriendRequestKey> friendRequestIds = sessionUser.getRequests();
+
+        return friendRequestIds.stream()
+                .map(key -> userRepository.findById(key.getFriendRequestId().longValue()).orElse(null))
+                .filter(user -> !user.getId().equals(sessionUser.getId())).collect(Collectors.toList());
+
     }
 
     @Transactional(readOnly = true)
@@ -156,5 +178,63 @@ public class UsersServiceImpl implements UsersService {
             return user.getFriendRequests().contains(key);
         }
         return false;
+    }
+
+    @Transactional
+    public boolean declineFriendRequest(Integer userId, Integer friendRequestId) {
+        return deleteFriendRequest(friendRequestId, userId);
+    }
+
+    @Transactional
+    public boolean acceptFriendRequest(Integer userId, Integer friendRequestId) {
+        UserModel user = userRepository.findById(userId).orElse(null);
+        UserModel friend = userRepository.findById(friendRequestId).orElse(null);
+        if (user != null && friend != null) {
+            // Remove the friend request
+            UserFriendRequestKey key = new UserFriendRequestKey(friendRequestId, userId);
+            UserFriendRequestKey key1 = new UserFriendRequestKey(userId,friendRequestId );
+            if (friend.getFriendRequests().remove(key) && user.getRequests().remove(key1)) {
+                // Add to friends list
+                user.getFriends().add(new UserFriendKey(userId, friendRequestId));
+                friend.getFriends().add(new UserFriendKey(friendRequestId, userId));
+                userRepository.save(user);
+                userRepository.save(friend);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserModel> findAllUsersStartingWithExcludingFriends(String prefix, Integer sessionUserId) {
+        UserModel sessionUser = userRepository.findById(sessionUserId).orElse(null);
+        if (sessionUser == null) {
+            return List.of();
+        }
+        List<Integer> friendIds = sessionUser.getFriends().stream()
+            .map(UserFriendKey::getFriendId)
+            .collect(Collectors.toList());
+        return userRepository.findByLoginStartingWith(prefix).stream()
+            .filter(user -> !friendIds.contains(user.getId()))
+            .collect(Collectors.toList());
+    }
+    
+    @Transactional
+    public void deleteUserByIdAndRemoveFromFriends(Integer userId) {
+        UserModel userToDelete = userRepository.findById(userId).orElse(null);
+        if (userToDelete != null) {
+            List<UserFriendKey> friends = userToDelete.getFriends();
+
+            for (UserFriendKey friendKey : friends) {
+                UserModel friend = userRepository.findById(friendKey.getFriendId()).orElse(null);
+                if (friend != null) {
+                    friend.getFriends().removeIf(fk -> fk.getFriendId().equals(userId));
+                    userRepository.save(friend);
+                }
+            }
+
+            userRepository.deleteById(userId);
+        }
     }
 }

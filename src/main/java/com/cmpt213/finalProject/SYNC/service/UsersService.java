@@ -23,7 +23,18 @@ public interface UsersService {
     @Transactional
     public List<UserModel> findRequestedFriends(UserModel sessionUser);
 
+    @Transactional
+    public List<UserModel> findFriendRequests(UserModel sessionUser);
+
     @Transactional(readOnly = true)
     public boolean deleteFriendRequest(Integer userId, Integer friendRequestId);
+    public boolean acceptFriendRequest(Integer userId, Integer friendRequestId);
+    public boolean declineFriendRequest(Integer userId, Integer friendRequestId);
+
+    List<UserModel> findAllUsersExcludingSessionUser(UserModel sessionUserId);
+    List<UserModel> findAllUsersStartingWithExcludingFriends(String prefix, Integer sessionUserId);
+
+    @Transactional
+    public void deleteUserByIdAndRemoveFromFriends(Integer userId);
    
 }

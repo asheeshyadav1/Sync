@@ -120,7 +120,6 @@ public class UsersController {
         } else {
             return "redirect:/admin/home";
         }
-
     }
 
     @PostMapping("/adminlogin")
@@ -194,8 +193,12 @@ public class UsersController {
 
     @GetMapping("/getUsersStartingWith")
     @ResponseBody
-    public List<UserModel> getUsersStartingWith(@RequestParam String prefix) {
-        return userRepository.findByLoginStartingWith(prefix);
+    public List<UserModel> getUsersStartingWith(@RequestParam String prefix, HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+        if (sessionUser == null) {
+            return List.of();
+        }
+        return userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
     }
 
     @GetMapping("/userEditAccount")
@@ -236,7 +239,7 @@ public class UsersController {
 
         UserModel user = optionalUser.get();
         model.addAttribute("user", user);
-        return "viewProfile";
+        return "myprofileview";
     }
 
     @PostMapping("/editUser")
@@ -303,8 +306,8 @@ public class UsersController {
             return "redirect:/login";
         }
 
-        // Delete the user from the database
-        userService.deleteUserById(sessionUser.getId());
+        // Delete the user from the database and remove from friends' lists
+        userService.deleteUserByIdAndRemoveFromFriends(sessionUser.getId());
 
         // Invalidate the session after deletion
         session.invalidate();
@@ -326,19 +329,21 @@ public class UsersController {
 
     @GetMapping("/getSendRequestFriends")
     @ResponseBody
-    public List<Integer> sendRequestUsers(HttpSession session) {
+    public List<UserModel> sendRequestUsers(HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
-        return userService.findRequestedFriends(sessionUser).stream().map(UserModel::getId)
-                .collect(Collectors.toList());
+        return userService.findRequestedFriends(sessionUser);
     }
 
     @PostMapping("/sendRequest/{id}")
     @ResponseBody
     public Map<String, String> sendRequest(@PathVariable Integer id, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
+
         boolean requestSent = userService.sendFriendRequest(id, sessionUser);
+
         Map<String, String> response = new HashMap<>();
         if (requestSent) {
             response.put("status", "Request Sent");
@@ -351,6 +356,51 @@ public class UsersController {
             }
         }
         return response;
+    }
+
+    @PostMapping("/acceptRequest/{id}")
+    @ResponseBody
+    public Map<String, String> acceptRequest(@PathVariable Integer id, HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+        boolean requestAccepted = userService.acceptFriendRequest(sessionUser.getId().intValue(), id);
+        Map<String, String> response = new HashMap<>();
+        if (requestAccepted) {
+            response.put("status", "Request Accepted");
+        } else {
+            response.put("status", "Failed to accept request");
+        }
+        return response;
+    }
+
+    @PostMapping("/declineRequest/{id}")
+    @ResponseBody
+    public Map<String, String> declineRequest(@PathVariable Integer id, HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+        boolean requestDeclined = userService.declineFriendRequest(sessionUser.getId().intValue(), id);
+        Map<String, String> response = new HashMap<>();
+        if (requestDeclined) {
+            response.put("status", "Request Declined");
+        } else {
+            response.put("status", "Failed to decline request");
+        }
+        return response;
+    }
+
+    @GetMapping("/getFriendRequests")
+    @ResponseBody
+    public List<UserModel> getFriendRequests(HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+        sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
+        return userService.findRequestedFriends(sessionUser);
+    }
+
+    @GetMapping("/getUsersExcludingSession")
+    @ResponseBody
+    public List<UserModel> getUsersExcludingSession(HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+        sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
+        System.out.println("\n\n\n\n" + userService.findAllUsersExcludingSessionUser(sessionUser) + "\n\n\n\n");
+        return userService.findAllUsersExcludingSessionUser(sessionUser);
     }
 
 }

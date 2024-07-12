@@ -15,8 +15,16 @@
             top: 0;
             right: 0;
             bottom: 0;
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
             /* Make sure the color scheme is matching the headers */
             background-color: whitesmoke;
+=======
+=======
+>>>>>>> Stashed changes
+            background-color: #e3effa; /* Set column background color to purple */
+            border-color: #e3effa;
+>>>>>>> Stashed changes
             padding: 20px;
             border-radius: 8px;
             width: 300px; /* Adjust width as needed */
@@ -44,6 +52,76 @@
             background-color: #f8f9fa;
             padding: 10px;
             border-radius: 5px;
+<<<<<<< Updated upstream
+=======
+            color: #b57edc; /* Set text color */
+        }
+
+        .custom-lead {
+            font-size: 1.5rem;
+            color: #b57edc; /* Set text color */
+            margin-bottom: 20px; /* Add space below the welcome message */
+            text-align: left; /* Align text to the left */
+        }
+
+        .col-md-9 {
+            margin-left: -900px;
+            width: 150%;
+            margin-bottom: 1000px;
+        }
+
+        .bottom-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff; /* White background */
+            display: flex;
+            justify-content: space-around; /* Evenly space items */
+            align-items: center;
+            height: 60px; /* Adjust height as needed */
+            box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.1); /* Optional: Add shadow */
+            z-index: 1000; /* Ensure it's above other content */
+        }
+
+        .bottom-navigation a {
+            text-decoration: none;
+            color: #b57edc; /* Purple text color */
+            display: block;
+            text-align: center;
+            line-height: 60px; /* Vertically center text */
+            width: 25%; /* Each button takes up 1/4 of the width */
+        }
+
+        .bottom-navigation a:hover {
+            background-color: #b57edc; /* Purple background on hover */
+            color: #ffffff; /* White text color on hover */
+        }
+
+        /* Styling for dropdown button */
+        .dropdown .dropdown-toggle {
+            background-color: transparent !important; /* Transparent background */
+            color: #b57edc !important; /* Purple text color */
+            border: none; /* Remove border */
+        }
+
+        .dropdown .dropdown-toggle:hover {
+            background-color: #b57edc !important; /* Purple background on hover */
+            color: #ffffff !important; /* White text color on hover */
+        }
+
+        .dropdown-menu {
+            min-width: auto !important; /* Adjust dropdown width */
+        }
+
+        .dropdown-menu .dropdown-item {
+            color: #b57edc; /* Purple text color */
+        }
+
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #b57edc; /* Purple background on hover */
+            color: #ffffff; /* White text color on hover */
+>>>>>>> Stashed changes
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -61,8 +139,8 @@
                     url: '/getSendRequestFriends',
                     method: 'GET',
                     success: function(response) {
-                        requestedFriends = response;
-                        requestedFriendsContainer.innerHTML = 'Users who have received friend requests: ' + response.join(', ');
+                        requestedFriends = response.map(user => user.id);
+                        requestedFriendsContainer.innerHTML = 'Users who have received friend requests: ' + response.map(user => user.login).join(', ');
                     },
                     error: function() {
                         alert('Error fetching friend requests.');
@@ -146,6 +224,86 @@
                     window.location.href = "/delete";
                 }
             });
+<<<<<<< Updated upstream
+=======
+
+            // Show modal on Add Friends button click
+            const addFriendsBtn = document.querySelector('#addfriends');
+            addFriendsBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                $('#addFriendsModal').modal('show'); // Show the modal
+                fetchFriendRequests();
+            });
+
+            // Fetch and display friend requests in the modal
+            function fetchFriendRequests() {
+                $.ajax({
+                    url: '/getUsersExcludingSession',
+                    method: 'GET',
+                    success: function(response) {
+                        const friendRequestsList = document.querySelector('#friendRequestsList');
+                        friendRequestsList.innerHTML = ''; // Clear previous requests
+                        response.forEach(user => {
+                            const listItem = document.createElement('li');
+                            listItem.classList.add('list-group-item');
+                            listItem.innerHTML = `
+                                ${user.login}
+                                <button class="btn btn-success btn-sm accept-request-btn" data-id="${user.id}">Accept</button>
+                                <button class="btn btn-warning btn-sm decline-request-btn" data-id="${user.id}">Decline</button>
+                            `;
+                            friendRequestsList.appendChild(listItem);
+                        });
+
+                        // Add click event listeners to the new buttons
+                        document.querySelectorAll('.accept-request-btn').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const userId = this.getAttribute('data-id');
+                                $.ajax({
+                                    url: `/acceptRequest/${userId}`,
+                                    method: 'POST',
+                                    success: function(response) {
+                                        if (response.status === 'Request Accepted') {
+                                            button.parentElement.remove(); // Remove the list item on success
+                                        } else {
+                                            alert(response.status);
+                                        }
+                                    },
+                                    error: function() {
+                                        alert('Error accepting friend request.');
+                                    }
+                                });
+                            });
+                        });
+
+                        document.querySelectorAll('.decline-request-btn').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const userId = this.getAttribute('data-id');
+                                $.ajax({
+                                    url: `/declineRequest/${userId}`,
+                                    method: 'POST',
+                                    success: function(response) {
+                                        if (response.status === 'Request Declined') {
+                                            button.parentElement.remove(); // Remove the list item on success
+                                        } else {
+                                            alert(response.status);
+                                        }
+                                    },
+                                    error: function() {
+                                        alert('Error declining friend request.');
+                                    }
+                                });
+                            });
+                        });
+                    },
+                    error: function() {
+                        alert('Error fetching friend requests.');
+                    }
+                });
+            }
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
         });
     </script>
 </head>
@@ -191,13 +349,63 @@
                 <div class="requested-friends"></div> <!-- Container to display requested friends -->
             </div>
         </div>
+<<<<<<< Updated upstream
+=======
+        <div class="col-md-3">
+            <!-- Placeholder div for scrollable content -->
+            <div class="add-friends-column">
+                <h4>Add Friends</h4>
+                <input type="text" class="form-control" placeholder="Enter username">
+                <ul class="search-results"></ul>
+            </div>
+        </div>
+>>>>>>> Stashed changes
     </div>
 
+<<<<<<< Updated upstream
     <!-- Add Friends Column -->
     <div class="add-friends-column">
         <h4>Add Friends</h4>
         <input type="text" class="form-control" placeholder="Enter username">
         <ul class="search-results"></ul>
     </div>
+=======
+<!-- Modal -->
+<div class="modal fade" id="addFriendsModal" tabindex="-1" aria-labelledby="addFriendsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFriendsModalLabel">Friend Requests</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content to display friend requests -->
+                <ul id="friendRequestsList" class="list-group">
+                    <!-- Dynamic content will be inserted here -->
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-navigation">
+    <a href="/login">Home</a>
+    <a href="./Like.html">Like</a>
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+            Settings
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+            <li><a id="deleteAccountBtn" class="dropdown-item" href="#">Delete Account</a></li>
+            <li><a class="dropdown-item" href="/userEditAccount">Edit Account</a></li>
+        </ul>
+    </div>
+    <a id="addfriends" href="#">Add Friends</a>
+</div>
+
+>>>>>>> Stashed changes
 </body>
 </html>

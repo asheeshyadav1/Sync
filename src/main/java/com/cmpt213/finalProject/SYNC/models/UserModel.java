@@ -38,8 +38,38 @@ public class UserModel {
         @AttributeOverride(name = "userId", column = @Column(name = "user_id", insertable = false, updatable = false)),
         @AttributeOverride(name = "friendRequestId", column = @Column(name = "friend_request_id"))
     })
-    List<UserFriendRequestKey> friendRequests = new ArrayList<>();
+    List<UserFriendRequestKey> sendfriendRequests = new ArrayList<>();
+<<<<<<< Updated upstream
+=======
 
+    @ElementCollection
+    @CollectionTable(name = "got_friend_requests", joinColumns = @JoinColumn(name = "user_id"))
+    @AttributeOverrides({
+        @AttributeOverride(name = "userId", column = @Column(name = "user_id", insertable = false, updatable = false)),
+        @AttributeOverride(name = "friendRequestId", column = @Column(name = "friend_request_id"))
+    })
+    List<UserFriendRequestKey> gotfriendRequests = new ArrayList<>();
+>>>>>>> Stashed changes
+
+    @ElementCollection
+    @CollectionTable(name = "got_friend_requests", joinColumns = @JoinColumn(name = "user_id"))
+    @AttributeOverrides({
+        @AttributeOverride(name = "userId", column = @Column(name = "user_id", insertable = false, updatable = false)),
+        @AttributeOverride(name = "friendRequestId", column = @Column(name = "friend_request_id"))
+    })
+    List<UserFriendRequestKey> gotfriendRequests = new ArrayList<>();
+
+<<<<<<< Updated upstream
+=======
+    @ElementCollection
+    @CollectionTable(name = "user_posts", joinColumns = @JoinColumn(name = "user_id"))
+    @AttributeOverrides({
+        @AttributeOverride(name = "userId", column = @Column(name = "user_id", insertable = false, updatable = false)),
+        @AttributeOverride(name = "UserPostId", column = @Column(name = "post_id"))
+    })
+    List<UserPostKey> UserPosts = new ArrayList<>();
+
+>>>>>>> Stashed changes
     @Override
     public int hashCode() {
         return Objects.hash(id, login, password, email);
@@ -150,11 +180,15 @@ public class UserModel {
     }
 
     public List<UserFriendRequestKey> getFriendRequests() {
-        return friendRequests;
+        return sendfriendRequests;
+    }
+
+    public List<UserFriendRequestKey> getRequests() {
+        return gotfriendRequests;
     }
 
     public void setFriendRequests(List<UserFriendRequestKey> friendRequests) {
-        this.friendRequests = friendRequests;
+        this.sendfriendRequests = friendRequests;
     }
 
     public String getDob() {
@@ -172,6 +206,11 @@ public class UserModel {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+
+    public List<UserFriendKey> getFriends() {
+        return friends;
+    }
+
 
     public static String hashFunc(String password) {
         // Step 1: Mirror the password
