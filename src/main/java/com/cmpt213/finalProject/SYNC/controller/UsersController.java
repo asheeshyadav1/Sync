@@ -342,10 +342,9 @@ public class UsersController {
         UserModel requser = userService.findByIdWithFriendRequests(id.longValue());
 
         boolean requestSent = userService.sendFriendRequest(id, sessionUser);
-        boolean reqsent = userService.sendFriendRequest(sessionUser.getId(), requser);
 
         Map<String, String> response = new HashMap<>();
-        if (requestSent && reqsent) {
+        if (requestSent) {
             response.put("status", "Request Sent");
         } else {
             boolean requestDeleted = userService.deleteFriendRequest(sessionUser.getId(), id);
