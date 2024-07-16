@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public interface UsersService {
@@ -15,6 +16,7 @@ public interface UsersService {
     void deactivateUser(Integer id);
     void activateUser(Integer id);
     UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location);
+    public String updateProfilePicture(String login, MultipartFile image);
     public void deleteUserById(Integer userId);
     public UserModel findByIdWithFriendRequests(Long id);
     @Transactional

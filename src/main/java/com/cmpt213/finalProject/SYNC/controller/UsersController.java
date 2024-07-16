@@ -1,5 +1,6 @@
 package com.cmpt213.finalProject.SYNC.controller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,14 +16,23 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.util.StringUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
+import com.cmpt213.finalProject.SYNC.service.ImgurService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
+
+import java.nio.file.Paths;
+
+
 
 @Controller
 public class UsersController {
@@ -31,6 +41,10 @@ public class UsersController {
 
     @Autowired
     private UsersService userService;
+
+    @Autowired
+    private ImgurService imgurService;
+
 
     @GetMapping("/")
     public String getHomePage() {
@@ -240,7 +254,7 @@ public class UsersController {
     }
 
     @PostMapping("/editUser")
-    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session) {
+    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session ,@RequestParam("profilePictureFile") MultipartFile profilePictureFile) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -248,16 +262,30 @@ public class UsersController {
             return "redirect:/login";
         }
         System.out.println(userModel.getGender());
+        // If a profile picture file is provided, upload it and get the URL
+        
+        
         // Update the user with additional information
         UserModel updatedUser = userService.updateUser(sessionUser.getLogin(), userModel.getDob(),
                 userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation());
 
         if (updatedUser == null) {
-            // Handle case where the user could not be updated
             model.addAttribute("error", "Failed to update user information.");
             return "editUser";
         }
 
+        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+            // Upload image to Imgur and get the URL
+            String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
+            // Update the user with the profile picture URL
+            updatedUser.setProfilePictureURL(profilePictureURL);
+        }
+
+        // Handle profile picture upload if a file is provided
+        
+
+    // Update the user in the database with the new profile picture URL
+        //userService.updateProfilePicture(sessionUser.getLogin(), profilePictureURL);
         session.setAttribute("session_user", updatedUser);
 
         model.addAttribute("userLogin", updatedUser.getLogin());
@@ -269,7 +297,7 @@ public class UsersController {
     // THIS NEEDS TO BE FIXED FOR THE INTRO PAGE
     // DATA HANDLING FOR ADDITIONAL INFO
     @PostMapping("/intro")
-    public String getAdditionalInfo(@ModelAttribute UserModel userModel, Model model, HttpSession session) {
+    public String getAdditionalInfo(@ModelAttribute UserModel userModel, Model model, HttpSession session, @RequestParam("profilePictureFile") MultipartFile profilePictureFile) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -284,6 +312,8 @@ public class UsersController {
             model.addAttribute("error", "Failed to update user information.");
             return "introPage";
         }
+
+        userRepository.save(updatedUser);
 
         session.setAttribute("session_user", updatedUser);
 

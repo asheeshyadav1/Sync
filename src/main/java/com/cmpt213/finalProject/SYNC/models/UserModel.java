@@ -23,8 +23,11 @@ public class UserModel {
     String location; 
     String pictureUpload; // do not need
     String phoneNumber; 
+    String profilePictureURL;
     
     
+    
+
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
     @AttributeOverrides({
@@ -48,6 +51,8 @@ public class UserModel {
         @AttributeOverride(name = "UserPostId", column = @Column(name = "post_id"))
     })
     List<UserFriendRequestKey> UserPosts = new ArrayList<>();
+
+    
 
     @Override
     public int hashCode() {
@@ -182,7 +187,13 @@ public class UserModel {
         this.phoneNumber = phoneNumber;
     }
 
-    
+    public String getProfilePictureURL() {
+        return profilePictureURL;
+    }
+
+    public void setProfilePictureURL(String profilePictureURL) {
+        this.profilePictureURL = profilePictureURL;
+    }
 
     public static String hashFunc(String password) {
         // Step 1: Mirror the password
