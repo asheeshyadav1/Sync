@@ -8,6 +8,10 @@ import com.cmpt213.finalProject.SYNC.models.*;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import java.io.IOException;
 
 
 import jakarta.persistence.EntityManager;
