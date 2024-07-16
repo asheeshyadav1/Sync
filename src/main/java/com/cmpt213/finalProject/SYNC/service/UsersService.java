@@ -17,6 +17,7 @@ public interface UsersService {
     void activateUser(Integer id);
     UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location);
     public String updateProfilePicture(String login, MultipartFile image);
+    public void saveUser(UserModel user);
     public void deleteUserById(Integer userId);
     public UserModel findByIdWithFriendRequests(Long id);
     @Transactional

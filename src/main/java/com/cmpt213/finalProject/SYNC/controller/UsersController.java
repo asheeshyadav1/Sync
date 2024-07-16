@@ -275,8 +275,9 @@ public class UsersController {
         }
 
         if (resetProfilePicture) {
-            updatedUser.setProfilePictureURL("/logo/profile logo.png"); // Default profile picture path
-            
+            String defaultProfilePictureURL = "/logo/profile logo.png"; // Default profile picture path
+            updatedUser.setProfilePictureURL(defaultProfilePictureURL);
+            userService.saveUser(updatedUser);
         }
         
         else{
@@ -292,7 +293,7 @@ public class UsersController {
         
 
         // Update the user in the database with the new profile picture URL
-        //userService.updateProfilePicture(sessionUser.getLogin(), profilePictureURL);
+        
         session.setAttribute("session_user", updatedUser);
 
         model.addAttribute("userLogin", updatedUser.getLogin());

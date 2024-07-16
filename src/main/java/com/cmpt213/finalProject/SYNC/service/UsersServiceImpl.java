@@ -125,6 +125,10 @@ public class UsersServiceImpl implements UsersService {
         return ppURL;
     }
 
+    public void saveUser(UserModel user) {
+        userRepository.save(user);
+    }
+
     public void deleteUserById(Integer userId) {
         userRepository.deleteById(userId);
     }
