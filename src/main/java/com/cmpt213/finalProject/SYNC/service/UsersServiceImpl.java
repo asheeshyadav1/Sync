@@ -101,27 +101,6 @@ public class UsersServiceImpl implements UsersService {
         }
         return null; // Handle case where user is not found
     }
-
-       public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location) {
-        Optional<UserModel> optionalUser = userRepository.findByLogin(login);
-
-        System.out.println(login);
-    
-        if (optionalUser.isPresent()) {
-            UserModel user = optionalUser.get();
-            // Update the user fields
-            user.setDob(dob);
-            user.setGender(gender);
-            user.setPhoneNumber(phoneNumber);
-            user.setLocation(location);
-
-            // Save the updated user back to the repository
-            userRepository.save(user);
-            return user;
-        }
-        return null; // Handle case where user is not found
-    }
-
     public String updateProfilePicture(String login, MultipartFile image) {
         UserModel user = userRepository.findByLogin(login).orElseThrow(() -> new RuntimeException("User not found"));
         String ppURL= imgurService.uploadImage(image);
