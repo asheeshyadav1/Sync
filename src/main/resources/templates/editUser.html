@@ -116,18 +116,18 @@
             // Reset profile picture button functionality
             const resetProfileBtn = document.querySelector('#resetProfileBtn');
             resetProfileBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                const confirmReset = confirm("Are you sure you want to remove the current profile picture?");
-                if (confirmReset) {
-                    // Replace with the default profile picture URL
-                    const defaultProfilePictureURL = '/logo/profile logo.png'; // Adjust as per your setup
-                    profilePictureView.setAttribute('src', defaultProfilePictureURL);
-                    // Optionally, update the hidden input field value to send to the server
-                    document.querySelector('#profilePictureURL').value = defaultProfilePictureURL;
-                    // Optionally, clear the file input
-                    profilePictureFileInput.value = '';
-                }
-            });
+            event.preventDefault();
+            const confirmReset = confirm("Are you sure you want to remove the profile picture?");
+            if (confirmReset) {
+            // Replace with the default profile picture URL
+            const defaultProfilePictureURL = '/logo/profile logo.png'; // Adjust as per your setup
+            profilePictureView.setAttribute('src', defaultProfilePictureURL);
+            // Update the hidden input field value to send to the server
+            document.querySelector('#resetProfilePicture').value = 'true';
+            // Optionally, clear the file input
+            profilePictureFileInput.value = '';
+            }
+         });
         });
     </script>
 </head>
@@ -207,6 +207,7 @@
                                             <div class="mb-3">
                                                 <label for="profilePictureFile" class="form-label">Profile Picture</label>
                                                 <input type="file" class="form-control" id="profilePictureFile" name="profilePictureFile" accept="image/*">
+                                                <input type="hidden" id="resetProfilePicture" name="resetProfilePicture" value="false">
                                             </div>
                                         </div>
                                     </div>

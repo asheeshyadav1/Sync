@@ -254,7 +254,7 @@ public class UsersController {
     }
 
     @PostMapping("/editUser")
-    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session ,@RequestParam("profilePictureFile") MultipartFile profilePictureFile) throws IOException {
+    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session ,@RequestParam("profilePictureFile") MultipartFile profilePictureFile, @RequestParam("resetProfilePicture") boolean resetProfilePicture) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -274,17 +274,24 @@ public class UsersController {
             return "editUser";
         }
 
+        if (resetProfilePicture) {
+            updatedUser.setProfilePictureURL("/logo/profile logo.png"); // Default profile picture path
+            
+        }
+        
+        else{
         if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
             // Upload image to Imgur and get the URL
             String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
             // Update the user with the profile picture URL
             updatedUser.setProfilePictureURL(profilePictureURL);
         }
+    }
 
         // Handle profile picture upload if a file is provided
         
 
-    // Update the user in the database with the new profile picture URL
+        // Update the user in the database with the new profile picture URL
         //userService.updateProfilePicture(sessionUser.getLogin(), profilePictureURL);
         session.setAttribute("session_user", updatedUser);
 
