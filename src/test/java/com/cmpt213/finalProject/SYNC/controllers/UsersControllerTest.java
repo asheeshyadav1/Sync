@@ -36,12 +36,12 @@ public class UsersControllerTest {
     @Test
     void testGetAllUsers() throws Exception{
         UserModel u1 = new UserModel();
-        u1.setName("Spiderman");
+        u1.setLogin("Spiderman");
         u1.setPassword("1234");
         
 
         UserModel u2 = new UserModel();
-        u2.setName("Lepookie");
+        u2.setLogin("Lepookie");
         u2.setPassword("1234");
         
         List<UserModel> users = new ArrayList<>();
@@ -55,7 +55,7 @@ public class UsersControllerTest {
             
             .andExpect(MockMvcResultMatchers.model().attribute("us", hasItem(
                 allOf(
-                    hasProperty("name", Matchers.is("Spiderman")),
+                    hasProperty("login", Matchers.is("Spiderman")),
                     hasProperty("password", Matchers.is("1234"))
                     
                 )
