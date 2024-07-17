@@ -422,7 +422,7 @@ public class UsersController {
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
         return userService.findGotFriendRequests(sessionUser);
     }
-    
+    //For testing
     @GetMapping("/users/view")
     public String getAllUsers(Model model){
         System.out.println("Getting all users");

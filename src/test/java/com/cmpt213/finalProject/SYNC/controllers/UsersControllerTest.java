@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import com.cmpt213.finalProject.SYNC.controller.UsersController;
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
+import com.cmpt213.finalProject.SYNC.service.ImgurService;
+import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
 import static org.mockito.Mockito.when;
@@ -25,35 +27,35 @@ import java.util.List;
 public class UsersControllerTest {
 
     public static final MediaType APPLICATION_JSON_UTF8 = new MediaType(MediaType.APPLICATION_JSON.getType(), MediaType.APPLICATION_JSON.getSubtype(), StandardCharsets.UTF_8);
-
-    @MockBean
+@MockBean
     private UserRepository userRepository;
 
     @MockBean
     private UsersService userService;
 
+    //@MockBean
+    //private UserModel userModel;
+
     @MockBean
-    private UserModel userModel;
+    private PostService postService;
+
+    @MockBean
+    private ImgurService imgurService;
+    
 
     @Autowired
     private MockMvc mockMvc;
 
+
     @Test
     void testGetAllUsers() throws Exception {
-
 
         UserModel u1 = new UserModel();
         u1.setLogin("Spiderman");
         String hashedPassword = UserModel.hashFunc("1234");
         u1.setPassword(hashedPassword);
-        u1.setEmail("y@gmail.com");
-        u1.setName("Asheesh");
-        u1.setGender("male");
-        u1.setDob("1999-01-01");
-        u1.setLocation("Vancouver");
-        u1.setPhoneNumber("1234567890");
        
-        UserModel u3 = userService.registerUser("Spiderman", hashedPassword,"y@gmail.com", "Asheesh","Male", "1999-01-01", "Vancouver", "1234567890");
+        //UserModel u3 = userService.registerUser("Spiderman", hashedPassword,"y@gmail.com", "Asheesh","Male", "1999-01-01", "Vancouver", "1234567890");
 
 
         UserModel u2 = new UserModel();
@@ -68,21 +70,27 @@ public class UsersControllerTest {
 
 
         List<UserModel> users = new ArrayList<>();
-        users.add(u3);
-        // users.add(u2);
+        users.add(u1);
+        users.add(u2);
 
         when(userRepository.findAll()).thenReturn(users);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/view"))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andExpect(MockMvcResultMatchers.view().name("showAll"))
-            
             .andExpect(MockMvcResultMatchers.model().attribute("us", hasItem(
                 allOf(
                     hasProperty("login", Matchers.is("Spiderman")),
+                    hasProperty("password", Matchers.is(hashedPassword))
+                )
+            )))
+            
+            .andExpect(MockMvcResultMatchers.model().attribute("us", hasItem(
+                allOf(
+                    hasProperty("login", Matchers.is("Lepookie")),
                     hasProperty("password", Matchers.is(hashedPassword)),
-                    hasProperty("email", Matchers.is("y@gmail.com")),
-                    hasProperty("name", Matchers.is("Asheesh")),
+                    hasProperty("email", Matchers.is("lebron@gmail.com")),
+                    hasProperty("name", Matchers.is("goat")),
                     hasProperty("gender", Matchers.is("male")),
                     hasProperty("dob", Matchers.is("1999-01-01")),
                     hasProperty("location", Matchers.is("Vancouver")),
@@ -95,6 +103,6 @@ public class UsersControllerTest {
     void testGetLogin() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/login"))
             .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.view().name("login"));
+            .andExpect(MockMvcResultMatchers.view().name("login_page"));
     }
 }
