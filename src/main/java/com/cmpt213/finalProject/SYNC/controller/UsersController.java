@@ -291,6 +291,9 @@ public class UsersController {
         model.addAttribute("userLogin", updatedUser.getLogin());
         model.addAttribute("user", updatedUser);
 
+        List<UserPost> userPosts = postService.getUserPosts(updatedUser.getId());
+        model.addAttribute("userPosts", userPosts);
+
         return "viewProfile";
     }
 
