@@ -1,9 +1,12 @@
 package com.cmpt213.finalProject.SYNC.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -226,7 +229,7 @@ public class UsersController {
         return "editUser";
     }
 
-     @GetMapping("/seeProfile")
+    @GetMapping("/seeProfile")
     public String seeProfile(Model model, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
@@ -247,7 +250,6 @@ public class UsersController {
         model.addAttribute("userPosts", userPosts);
         return "viewProfile";
     }
-
 
     @PostMapping("/editUser")
     public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session) {
@@ -342,14 +344,16 @@ public class UsersController {
         UserModel requser = userService.findByIdWithFriendRequests(id.longValue());
 
         boolean requestSent = userService.sendFriendRequest(id, sessionUser);
-        // boolean reqUser = userService.sendFriendRequest(sessionUser.getId(), requser);
+        // boolean reqUser = userService.sendFriendRequest(sessionUser.getId(),
+        // requser);
 
         Map<String, String> response = new HashMap<>();
         if (requestSent) {
             response.put("status", "Request Sent");
         } else {
             boolean requestDeleted = userService.deleteFriendRequest(sessionUser.getId(), id);
-            // boolean reqdeleted = userService.deleteFriendRequest(id, sessionUser.getId());
+            // boolean reqdeleted = userService.deleteFriendRequest(id,
+            // sessionUser.getId());
             if (requestDeleted) {
                 response.put("status", "Request Deleted");
             } else {
@@ -394,12 +398,18 @@ public class UsersController {
     public List<UserModel> getFriendRequests(HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
-        return userService.findGotFriendRequests(sessionUser);
+        List<UserModel> friendRequests = userService.findGotFriendRequests(sessionUser);
+
+        // Remove duplicates
+        Set<UserModel> uniqueFriendRequests = new HashSet<>(friendRequests);
+
+        return new ArrayList<>(uniqueFriendRequests);
     }
+
     @GetMapping("/users/view")
-    public String getAllUsers(Model model){
+    public String getAllUsers(Model model) {
         System.out.println("Getting all users");
-        
+
         List<UserModel> users = userRepository.findAll();
         // end of database call
         model.addAttribute("us", users);
