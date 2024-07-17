@@ -90,6 +90,7 @@ public class UsersController {
             System.out.println("Registration failed: duplicate user or invalid data");
             return "error_page";
         }
+        // userRepository.save(registeredUser);
 
         model.addAttribute("userLogin", userModel.getLogin());
         request.getSession().setAttribute("session_user", userModel);
@@ -421,6 +422,7 @@ public class UsersController {
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
         return userService.findGotFriendRequests(sessionUser);
     }
+    
     @GetMapping("/users/view")
     public String getAllUsers(Model model){
         System.out.println("Getting all users");
