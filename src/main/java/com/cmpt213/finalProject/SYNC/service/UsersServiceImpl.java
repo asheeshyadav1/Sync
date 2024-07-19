@@ -1,20 +1,27 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.cmpt213.finalProject.SYNC.models.*;
-import com.cmpt213.finalProject.SYNC.repository.UserRepository;
-import org.springframework.web.multipart.MultipartFile;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.cmpt213.finalProject.SYNC.models.UserFriendKey;
+import com.cmpt213.finalProject.SYNC.models.UserFriendRequestKey;
+import com.cmpt213.finalProject.SYNC.models.UserModel;
+import com.cmpt213.finalProject.SYNC.repository.UserRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
+
 
 @Service
 public class UsersServiceImpl implements UsersService {
@@ -30,7 +37,7 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
-            String location, String phoneNumber) {
+            String location, String phoneNumber, String profilePictureURL) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -49,6 +56,7 @@ public class UsersServiceImpl implements UsersService {
             user.setDob(dob);
             user.setLocation(location);
             user.setPhoneNumber(phoneNumber);
+            user.setProfilePictureURL(profilePictureURL);
 
             return userRepository.save(user);
         }

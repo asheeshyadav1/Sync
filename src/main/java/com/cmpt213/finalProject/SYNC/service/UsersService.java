@@ -1,16 +1,16 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-import com.cmpt213.finalProject.SYNC.models.UserModel;
-
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cmpt213.finalProject.SYNC.models.UserModel;
+
 @Service
 public interface UsersService {
-    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber);
+    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL);
     UserModel authentication(String login, String password);
     List<UserModel> getAllUsers();
     void deactivateUser(Integer id);

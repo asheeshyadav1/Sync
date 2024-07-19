@@ -1,10 +1,10 @@
 package com.cmpt213.finalProject.SYNC.controller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,15 +20,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserPost;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
+import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
-
-import com.cmpt213.finalProject.SYNC.service.ImgurService;
 
 @Controller
 public class UsersController {
@@ -70,7 +68,7 @@ public class UsersController {
 
     @PostMapping("/register")
     public String registerUser(@ModelAttribute UserModel userModel, Model model, HttpServletRequest request,
-            HttpSession session) {
+            HttpSession session) throws IOException {
         System.out.println("register request: " + userModel);
 
         String hashedPassword = UserModel.hashFunc(userModel.getPassword());
@@ -81,10 +79,13 @@ public class UsersController {
         userModel.setDob("");
         userModel.setLocation("not-given");
         userModel.setPhoneNumber("");
+        userModel.setProfilePictureURL("");
+
+       
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
-                userModel.getLocation(), userModel.getPhoneNumber());
+                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL());
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
@@ -313,6 +314,18 @@ public class UsersController {
             model.addAttribute("error", "Failed to update user information.");
             return "introPage";
         }
+
+        if(profilePictureFile.isEmpty())
+        {
+            String defaultProfilePictureURL = "/logo/profile logo.png"; // Default profile picture path
+            updatedUser.setProfilePictureURL(defaultProfilePictureURL);
+            userService.saveUser(updatedUser);
+        }
+
+        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+            String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
+            updatedUser.setProfilePictureURL(profilePictureURL);
+            }
 
         userRepository.save(updatedUser);
 
