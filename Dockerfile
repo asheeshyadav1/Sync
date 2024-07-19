@@ -1,30 +1,31 @@
-# Stage 1: Build the application
-FROM maven:3.8.6-openjdk-18 AS build
+# Start with the JDK 22 image
+FROM openjdk:22-jdk-slim as build
 
-# Set the working directory in the container
+# Install curl and Maven
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get install -y maven
+
+# Set the working directory in the Docker container
 WORKDIR /app
 
-# Copy the pom.xml file and install dependencies
-COPY pom.xml .
-RUN mvn dependency:go-offline
-
-# Copy the source code into the container
-COPY src ./src
+# Copy the local code to the Docker container
+COPY . .
 
 # Build the application
 RUN mvn clean package -DskipTests
 
-# Stage 2: Run the application
-FROM openjdk:18-jdk-alpine
+# For the final image, use the same JDK 22 base
+FROM openjdk:22-jdk-slim
 
-# Set the working directory in the container
+# Set the working directory in the Docker container
 WORKDIR /app
 
-# Copy the JAR file from the previous stage
-COPY --from=build /app/target/your-app-name.jar ./app.jar
+# Copy the JAR file from the build stage to the final stage
+COPY --from=build /app/target/*.jar /app/application.jar
 
-# Expose the port the app runs on
+# Set the port number the container should expose
 EXPOSE 8080
 
-# Set the entry point to run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application
+CMD ["java", "-jar", "/app/application.jar"]
