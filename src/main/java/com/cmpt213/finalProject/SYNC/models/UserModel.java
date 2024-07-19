@@ -25,6 +25,7 @@ public class UserModel {
     String dob;
     String location;
     String phoneNumber;
+    String profilePictureURL;
 
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
@@ -55,7 +56,7 @@ public class UserModel {
     private List<UserPost> userPosts = new ArrayList<>();
 
     // Getters and Setters
-    public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber) {
+    public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
         this.login = login;
         this.password = password;
         this.email = email;
@@ -66,6 +67,7 @@ public class UserModel {
         this.dob = dob;
         this.location = location;
         this.phoneNumber = phoneNumber;
+        this.profilePictureURL = profilePictureURL;
     }
     public Integer getId() {
         return id;
@@ -185,6 +187,14 @@ public class UserModel {
 
     public void setUserPosts(List<UserPost> userPosts) {
         this.userPosts = userPosts;
+    }
+
+    public String getProfilePictureURL() {
+        return profilePictureURL;
+    }
+
+    public void setProfilePictureURL(String profilePictureURL) {
+        this.profilePictureURL = profilePictureURL;
     }
 
     @Override

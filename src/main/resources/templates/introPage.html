@@ -136,7 +136,7 @@
                     <p>We are so glad you decided to join the Sync Family</p>
                     <p>Before we begin please enter some more information about yourself to show others!</p>
                     <p>Remeber this is for you and your friends and please share what you are comfortable with!</p>
-                    <form id="registration-form" action="/intro" method="post" th:object="${user}">
+                    <form id="registration-form" action="/intro" method="post" th:object="${user}" enctype="multipart/form-data">
                         <div class="mb-3">
                             <input type="date" class="form-control" id="dob" name="dob" placeholder="Date of Birth">
                         </div>
@@ -151,6 +151,10 @@
                         <div class="mb-3">
                             <input type="text" class="form-control" id="location" name="location"
                                 placeholder="Location">
+                        </div>
+                        <div class="mb-3">
+                            <label for="profilePictureFile" class="form-label">Profile Picture</label>
+                            <input type="file" class="form-control" id="profilePictureFile" name="profilePictureFile" accept="image/*">
                         </div>
                         <button type="submit" class="btn btn-primary">Sync With Others!</button>
                     </form>

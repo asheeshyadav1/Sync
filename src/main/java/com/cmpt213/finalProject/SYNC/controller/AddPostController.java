@@ -1,10 +1,7 @@
 package com.cmpt213.finalProject.SYNC.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -44,8 +41,9 @@ public class AddPostController {
     }
 
     @PostMapping("/addPost")
-    public String addPost(@RequestParam("caption") String caption, @RequestParam("image") MultipartFile image,
-            HttpSession session, Model model) throws IOException {
+    public String addPost(@RequestParam("caption") String caption,
+                          @RequestParam("image") MultipartFile image,
+                          HttpSession session, Model model) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         if (sessionUser == null) {
             return "redirect:/login";
@@ -67,13 +65,7 @@ public class AddPostController {
         if (sessionUser == null) {
             throw new RuntimeException("User not authenticated");
         }
-
-        List<UserPost> friendPosts = postService.getRecentFriendPosts(sessionUser.getId());
-
-        // Remove duplicates
-        Set<UserPost> uniqueFriendPosts = new HashSet<>(friendPosts);
-
-        return new ArrayList<>(uniqueFriendPosts);
+        return postService.getRecentFriendPosts(sessionUser.getId());
     }
 
     @PostMapping("/api/posts/{postId}/like")

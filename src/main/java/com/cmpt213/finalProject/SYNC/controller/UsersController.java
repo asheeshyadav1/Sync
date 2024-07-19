@@ -1,13 +1,10 @@
 package com.cmpt213.finalProject.SYNC.controller;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -18,10 +15,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserPost;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
+import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
@@ -40,6 +39,9 @@ public class UsersController {
 
     @Autowired
     private PostService postService;
+
+     @Autowired
+    private ImgurService imgurService;
 
     @GetMapping("/")
     public String getHomePage() {
@@ -66,7 +68,7 @@ public class UsersController {
 
     @PostMapping("/register")
     public String registerUser(@ModelAttribute UserModel userModel, Model model, HttpServletRequest request,
-            HttpSession session) {
+            HttpSession session) throws IOException {
         System.out.println("register request: " + userModel);
 
         String hashedPassword = UserModel.hashFunc(userModel.getPassword());
@@ -77,10 +79,13 @@ public class UsersController {
         userModel.setDob("");
         userModel.setLocation("not-given");
         userModel.setPhoneNumber("");
+        userModel.setProfilePictureURL("");
+
+       
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
-                userModel.getLocation(), userModel.getPhoneNumber());
+                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL());
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
@@ -229,7 +234,7 @@ public class UsersController {
         return "editUser";
     }
 
-    @GetMapping("/seeProfile")
+     @GetMapping("/seeProfile")
     public String seeProfile(Model model, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
@@ -251,8 +256,9 @@ public class UsersController {
         return "viewProfile";
     }
 
+
     @PostMapping("/editUser")
-    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session) {
+    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session ,@RequestParam("profilePictureFile") MultipartFile profilePictureFile, @RequestParam("resetProfilePicture") boolean resetProfilePicture) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -268,16 +274,32 @@ public class UsersController {
             return "editUser";
         }
 
+        if (resetProfilePicture) {
+            String defaultProfilePictureURL = "/logo/profile logo.png"; // Default profile picture path
+            updatedUser.setProfilePictureURL(defaultProfilePictureURL);
+            userService.saveUser(updatedUser);
+        }
+        
+        else{
+        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+            String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
+            updatedUser.setProfilePictureURL(profilePictureURL);
+            }
+        }
+
         session.setAttribute("session_user", updatedUser);
 
         model.addAttribute("userLogin", updatedUser.getLogin());
         model.addAttribute("user", updatedUser);
 
+        List<UserPost> userPosts = postService.getUserPosts(updatedUser.getId());
+        model.addAttribute("userPosts", userPosts);
+
         return "viewProfile";
     }
 
-    @PostMapping("/intro")
-    public String getAdditionalInfo(@ModelAttribute UserModel userModel, Model model, HttpSession session) {
+     @PostMapping("/intro")
+    public String getAdditionalInfo(@ModelAttribute UserModel userModel, Model model, HttpSession session, @RequestParam("profilePictureFile") MultipartFile profilePictureFile) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -292,6 +314,20 @@ public class UsersController {
             model.addAttribute("error", "Failed to update user information.");
             return "introPage";
         }
+
+        if(profilePictureFile.isEmpty())
+        {
+            String defaultProfilePictureURL = "/logo/profile logo.png"; // Default profile picture path
+            updatedUser.setProfilePictureURL(defaultProfilePictureURL);
+            userService.saveUser(updatedUser);
+        }
+
+        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+            String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
+            updatedUser.setProfilePictureURL(profilePictureURL);
+            }
+
+        userRepository.save(updatedUser);
 
         session.setAttribute("session_user", updatedUser);
 
@@ -344,16 +380,14 @@ public class UsersController {
         UserModel requser = userService.findByIdWithFriendRequests(id.longValue());
 
         boolean requestSent = userService.sendFriendRequest(id, sessionUser);
-        // boolean reqUser = userService.sendFriendRequest(sessionUser.getId(),
-        // requser);
+        // boolean reqUser = userService.sendFriendRequest(sessionUser.getId(), requser);
 
         Map<String, String> response = new HashMap<>();
         if (requestSent) {
             response.put("status", "Request Sent");
         } else {
             boolean requestDeleted = userService.deleteFriendRequest(sessionUser.getId(), id);
-            // boolean reqdeleted = userService.deleteFriendRequest(id,
-            // sessionUser.getId());
+            // boolean reqdeleted = userService.deleteFriendRequest(id, sessionUser.getId());
             if (requestDeleted) {
                 response.put("status", "Request Deleted");
             } else {
@@ -398,18 +432,12 @@ public class UsersController {
     public List<UserModel> getFriendRequests(HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
-        List<UserModel> friendRequests = userService.findGotFriendRequests(sessionUser);
-
-        // Remove duplicates
-        Set<UserModel> uniqueFriendRequests = new HashSet<>(friendRequests);
-
-        return new ArrayList<>(uniqueFriendRequests);
+        return userService.findGotFriendRequests(sessionUser);
     }
-
     @GetMapping("/users/view")
-    public String getAllUsers(Model model) {
+    public String getAllUsers(Model model){
         System.out.println("Getting all users");
-
+        
         List<UserModel> users = userRepository.findAll();
         // end of database call
         model.addAttribute("us", users);

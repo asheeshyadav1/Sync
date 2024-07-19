@@ -1,19 +1,27 @@
 package com.cmpt213.finalProject.SYNC.service;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.cmpt213.finalProject.SYNC.models.*;
+import com.cmpt213.finalProject.SYNC.models.UserFriendKey;
+import com.cmpt213.finalProject.SYNC.models.UserFriendRequestKey;
+import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @Service
 public class UsersServiceImpl implements UsersService {
@@ -24,9 +32,12 @@ public class UsersServiceImpl implements UsersService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private ImgurService imgurService;
+
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
-            String location, String phoneNumber) {
+            String location, String phoneNumber, String profilePictureURL) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -45,6 +56,7 @@ public class UsersServiceImpl implements UsersService {
             user.setDob(dob);
             user.setLocation(location);
             user.setPhoneNumber(phoneNumber);
+            user.setProfilePictureURL(profilePictureURL);
 
             return userRepository.save(user);
         }
@@ -96,6 +108,23 @@ public class UsersServiceImpl implements UsersService {
             return user;
         }
         return null; // Handle case where user is not found
+    }
+    public String updateProfilePicture(String login, MultipartFile image) {
+        UserModel user = userRepository.findByLogin(login).orElseThrow(() -> new RuntimeException("User not found"));
+        String ppURL= imgurService.uploadImage(image);
+        if (user != null) {
+            // Update the user's profile picture URL
+            user.setProfilePictureURL(ppURL);
+
+            // Save the updated user back to the database
+            userRepository.save(user);
+        }
+
+        return ppURL;
+    }
+
+    public void saveUser(UserModel user) {
+        userRepository.save(user);
     }
 
     public void deleteUserById(Integer userId) {
