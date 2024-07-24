@@ -33,10 +33,9 @@ public class Message {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
-    // Default constructor
+ 
     public Message() {}
 
-    // Constructor with fields
     public Message(UserModel sender, UserModel receiver, String content, LocalDateTime timestamp) {
         this.sender = sender;
         this.receiver = receiver;
