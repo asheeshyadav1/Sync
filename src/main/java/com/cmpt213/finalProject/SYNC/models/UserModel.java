@@ -2,8 +2,20 @@ package com.cmpt213.finalProject.SYNC.models;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import jakarta.persistence.*;
+
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users_table")
@@ -54,6 +66,10 @@ public class UserModel {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<UserPost> userPosts = new ArrayList<>();
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Message> sentMessages = new ArrayList<>();
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Message> receivedMessages = new ArrayList<>();
 
     // Getters and Setters
     public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
@@ -197,6 +213,22 @@ public class UserModel {
         this.profilePictureURL = profilePictureURL;
     }
 
+    public List<Message> getSentMessages() {
+        return sentMessages;
+    }
+
+    public void setSentMessages(List<Message> sentMessages) {
+        this.sentMessages = sentMessages;
+    }
+
+    public List<Message> getReceivedMessages() {
+        return receivedMessages;
+    }
+
+    public void setReceivedMessages(List<Message> receivedMessages) {
+        this.receivedMessages = receivedMessages;
+    }
+    
     @Override
     public String toString() {
         return "UserModel [id=" + id + ", login=" + login + ", email=" + email + ", isAdmin=" + isAdmin + ", isActive=" + isActive + "]";
