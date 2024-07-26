@@ -10,6 +10,8 @@
     <link href="/css/header.css" rel="stylesheet">
     <link href="/css/footer.css" rel="stylesheet">
     <link href="/css/body.css" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAo9WVNVu7tXMAyy_qosXZ8qRuzfL6JjNU&libraries=places" defer></script>    
+    <script src="/src/main/resources/static/JS/LocationFinder.js" defer></script>
     <style>
         body,
         html {
@@ -105,6 +107,29 @@
         .is-invalid {
             border-color: red;
         }
+    .pac-container {
+    z-index: 1051 !important; /* Ensure it appears above other elements */
+    position: absolute !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    /* Additional styles to ensure proper positioning */
+    width: 100% !important;
+    margin-top: 1px !important;
+    margin-bottom: 100px
+    }
+
+/* Optional: Additional styling for the dropdown */
+.pac-item {
+    padding: 10px !important;
+    font-size: 14px !important;
+}
+
+/* Ensure the input box and dropdown are positioned correctly within the form */
+.form-control {
+    flex: 1; 
+}
     </style>
 </head>
 
@@ -150,12 +175,12 @@
                         </div>
                         <!--- TODO: use a radio for this instead of text entry--->
                         <div class="mb-3">
-                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
-                                pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="(123)-456-7890">
+                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="(123)-456-7890">
                         </div>
                         <div class="mb-3">
-                            <input type="text" class="form-control" id="location" name="location"
-                                placeholder="Location">
+                            <input type="text" class="form-control" id="location" name="location" placeholder="Location">
+                            <input type="hidden" id="latitude" name="latitude">
+                            <input type="hidden" id="longitude" name="longitude">
                         </div>
                         <div class="mb-3">
                             <label for="profilePictureFile" class="form-label">Profile Picture</label>
@@ -163,10 +188,35 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Sync With Others!</button>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                    
+                    <script>
+                        function initAutocomplete() {
+                            const input = document.getElementById('location');
+                            const autocomplete = new google.maps.places.Autocomplete(input, {
+                                types: ['address'],
+                            });
+                    
+                            autocomplete.addListener('place_changed', function() {
+                                const place = autocomplete.getPlace();
+                                if (place.geometry) {
+                                    const lat = place.geometry.location.lat();
+                                    const lng = place.geometry.location.lng();
+                                    console.log(`Latitude: ${lat}, Longitude: ${lng}`);
+                    
+                                    // Set latitude and longitude values to hidden input fields
+                                    document.getElementById('latitude').value = lat;
+                                    document.getElementById('longitude').value = lng;
+                                }
+                            });
+                        }
+                    
+                        document.addEventListener('DOMContentLoaded', function() {
+                            initAutocomplete();
+                        });
+                    </script>
+                    
+                    
+
 
     <footer class="footer background-color white text-purple py-3">
         <div class="container">

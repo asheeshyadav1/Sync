@@ -1,5 +1,6 @@
 package com.cmpt213.finalProject.SYNC.service;
 
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,9 +33,12 @@ public class UsersServiceImpl implements UsersService {
     @Autowired
     private ImgurService imgurService;
 
+    
+   
+
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
-            String location, String phoneNumber, String profilePictureURL) {
+            String location, String phoneNumber, String profilePictureURL, Double latitude, Double longitude) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -54,6 +58,8 @@ public class UsersServiceImpl implements UsersService {
             user.setLocation(location);
             user.setPhoneNumber(phoneNumber);
             user.setProfilePictureURL(profilePictureURL);
+            user.setLatitude(latitude);
+            user.setLongitude(longitude);
 
             return userRepository.save(user);
         }
@@ -88,7 +94,7 @@ public class UsersServiceImpl implements UsersService {
     }
 
     // Method to update user information
-    public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location) {
+    public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location, Double latitude, Double longitude) {
         Optional<UserModel> optionalUser = userRepository.findByLogin(login);
 
         System.out.println(login);
@@ -100,6 +106,8 @@ public class UsersServiceImpl implements UsersService {
             user.setGender(gender);
             user.setPhoneNumber(phoneNumber);
             user.setLocation(location);
+            user.setLatitude(latitude);
+            user.setLongitude(longitude);
             // Save the updated user back to the repository
             userRepository.save(user);
             return user;
@@ -280,4 +288,6 @@ public class UsersServiceImpl implements UsersService {
         }
         return false;
     }
+
+    
 }

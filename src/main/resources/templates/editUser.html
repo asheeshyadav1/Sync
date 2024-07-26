@@ -8,6 +8,8 @@
     <link href="/css/header.css" rel="stylesheet">
     <link href="/css/footer.css" rel="stylesheet">
     <link href="/css/personal-account.css" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAo9WVNVu7tXMAyy_qosXZ8qRuzfL6JjNU&libraries=places" defer></script>    
+    <script src="/src/main/resources/static/JS/LocationFinder.js" defer></script>
     <style>
     .bottom-navigation {
     position: fixed;
@@ -104,10 +106,13 @@
     display: block;
     width: 40px;
     height: 40px;
-    background-image: url("data:image/svg+xml,%3Csvg enable-background='new 0 0 64 64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m17.718 8.893c6.457 0 12.902 4.058 14.274 8.78 1.012-4.496 7.61-8.735 14.256-8.735 5.17 0 10.368 2.564 12.99 9.567 6.445 17.219-25 33.753-27.247 35.799-2.247-2.575-33.69-18.284-27.241-35.789 2.58-7.003 7.778-9.623 12.968-9.622m0-1.893h-.002c-6.814 0-12.181 3.957-14.723 10.855-5.788 15.71 15.228 29.479 24.2 35.356 1.445.947 3.082 2.02 3.404 2.354l1.254 1.435 1.396-1.292c.232-.204 1.305-.891 2.343-1.555 8.604-5.508 31.458-20.141 25.401-36.318-2.566-6.858-7.94-10.791-14.742-10.791-5.744 0-11.426 2.763-14.312 6.554-2.982-3.848-8.592-6.597-14.219-6.598z'/%3E%3C/svg%3E");
-    background-size: contain;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' width='256' height='256' viewBox='0 0 256 256' xml:space='preserve'%3E%3Cdefs%3E%3C/defs%3E%3Cg style='stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;' transform='translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)' %3E%3Cpath d='M 42.485 0.087 C 25.808 1.239 11.394 15.224 9.786 31.863 c -1.248 12.912 4.452 24.569 13.799 31.684 c 8.596 6.543 15.753 14.784 20.468 24.503 L 45 90 l 0.947 -1.953 c 4.722 -9.733 11.906 -17.966 20.505 -24.53 c 8.467 -6.463 13.932 -16.658 13.932 -28.133 C 80.384 15.01 63.165 -1.342 42.485 0.087 z' style='stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(135,41,144); fill-rule: nonzero; opacity: 1;' transform=' matrix(1 0 0 1 0 0) ' stroke-linecap='round' /%3E%3Ccircle cx='45' cy='35.38' r='22.5' style='stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;' transform=' matrix(1 0 0 1 0 0) '/%3E%3C/g%3E%3C/svg%3E");    background-size: contain;
     background-repeat: no-repeat;
     margin: auto;
+}
+
+.like .btn:hover{
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' width='256' height='256' viewBox='0 0 256 256' xml:space='preserve'%3E%3Cdefs%3E%3C/defs%3E%3Cg style='stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;' transform='translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)' %3E%3Cpath d='M 42.485 0.087 C 25.808 1.239 11.394 15.224 9.786 31.863 c -1.248 12.912 4.452 24.569 13.799 31.684 c 8.596 6.543 15.753 14.784 20.468 24.503 L 45 90 l 0.947 -1.953 c 4.722 -9.733 11.906 -17.966 20.505 -24.53 c 8.467 -6.463 13.932 -16.658 13.932 -28.133 C 80.384 15.01 63.165 -1.342 42.485 0.087 z' style='stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(135,41,144); fill-rule: nonzero; opacity: 1;' transform=' matrix(1 0 0 1 0 0) ' stroke-linecap='round' /%3E%3Ccircle cx='45' cy='35.38' r='22.5' style='stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;' transform=' matrix(1 0 0 1 0 0) '/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .home .btn:hover {
@@ -115,10 +120,7 @@
     background-image: url("data:image/svg+xml,%3Csvg fill='%23ffffff' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50' width='50px' height='50px'%3E%3Cpath d='M 24.962891 1.0546875 A 1.0001 1.0001 0 0 0 24.384766 1.2636719 L 1.3847656 19.210938 A 1.0005659 1.0005659 0 0 0 2.6152344 20.789062 L 4 19.708984 L 4 46 A 1.0001 1.0001 0 0 0 5 47 L 18.832031 47 A 1.0001 1.0001 0 0 0 19.158203 47 L 30.832031 47 A 1.0001 1.0001 0 0 0 31.158203 47 L 45 47 A 1.0001 1.0001 0 0 0 46 46 L 46 19.708984 L 47.384766 20.789062 A 1.0005657 1.0005657 0 1 0 48.615234 19.210938 L 41 13.269531 L 41 6 L 35 6 L 35 8.5859375 L 25.615234 1.2636719 A 1.0001 1.0001 0 0 0 24.962891 1.0546875 z M 25 3.3222656 L 44 18.148438 L 44 45 L 32 45 L 32 26 L 18 26 L 18 45 L 6 45 L 6 18.148438 L 25 3.3222656 z M 37 8 L 39 8 L 39 11.708984 L 37 10.146484 L 37 8 z M 20 28 L 30 28 L 30 45 L 20 45 L 20 28 z'/%3E%3C/svg%3E");
 }
 
-.like .btn:hover{
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m61.1 18.2c-6.4-17-27.2-9.4-29.1-.9-2.6-9-22.9-15.7-29.1.9-6.9 18.5 26.7 35.1 29.1 37.8 2.4-2.2 36-19.6 29.1-37.8' fill='%23c28fef'/%3E%3C/svg%3E");
 
-}
 
 .add .btn{
     display: block;
@@ -368,10 +370,35 @@
     </div>
 </div>
 </body>
+<script>
+    function initAutocomplete() {
+        const input = document.getElementById('location');
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+            types: ['address'],
+        });
+
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+                console.log(`Latitude: ${lat}, Longitude: ${lng}`);
+
+                // Set latitude and longitude values to hidden input fields
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initAutocomplete();
+    });
+</script>
 <footer>
     <div class="bottom-navigation">
         <a href="/login" class="home"><span class="btn"></span></a>
-        <a href="./Like.html" class="like"><span class="btn"></span></a>
+        <a href="./Maps.html" class="like"><span class="btn"></span></a>
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                 <span class="icon-gear"></span>

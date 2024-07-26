@@ -11,12 +11,12 @@ import com.cmpt213.finalProject.SYNC.models.UserModel;
 
 @Service
 public interface UsersService {
-    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL);
+    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL, Double latitude, Double longitude);
     UserModel authentication(String login, String password);
     List<UserModel> getAllUsers();
     void deactivateUser(Integer id);
     void activateUser(Integer id);
-    UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location);
+    UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location, Double latitude, Double longitude);
     public String updateProfilePicture(String login, MultipartFile image);
     public void saveUser(UserModel user);
     // public void deleteUserById(Integer userId);
@@ -45,7 +45,11 @@ public interface UsersService {
 
     @Transactional(readOnly = true)
     public List<UserModel> findGotFriendRequests(UserModel sessionUser);
+
    
     @Transactional(readOnly = true)
     public List<UserFriendKey> getAllFriends(UserModel sessionUser);
+
+
+    
 }

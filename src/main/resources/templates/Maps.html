@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync Maps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <link href="/css/header.css" rel="stylesheet">
+    <link href="/css/footer.css" rel="stylesheet">
+    <link href="/css/body.css" rel="stylesheet">
+    <link href="/css/personal-account.css" rel="stylesheet">
+    <link href="/css/maps.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+        }
+        #map-container {
+            height: 100vh;
+            width: 100%;
+        }
+        .dropdown-menu {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .friends-dropdown-card {
+            position: absolute;
+            top: 150px;
+            left: 1200px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn-purple {
+            background-color: #b57edc;
+            color: white;
+        }
+        .btn-purple:hover {
+            background-color: #b57edc;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="/logo/logo.png" alt="Sync Logo" style="height: 100px;">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Home</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a id="logoutBtn" class="nav-link" href="/userLogout">Logout</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a class="nav-link" href="#">
+                            <img src="/logo/profile logo.png" alt="Profile Picture" class="rounded-circle" width="40" height="40">
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="map-container"></div>
+
+    <div class="card friends-dropdown-card">
+        <button class="btn btn-purple dropdown-toggle" type="button" id="friendsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Select Friend
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="friendsDropdown">
+            <li><a class="dropdown-item" id="user-location" th:data-lat="${user.latitude}" th:data-lon="${user.longitude}">Me</a></li>
+                         <li th:each="friendLocation : ${friendsLocations}">
+                <a class="dropdown-item" th:id="'friend-' + ${friendLocation.login}" th:data-lat="${friendLocation.latitude}" th:data-lon="${friendLocation.longitude}" th:text="${friendLocation.login}"></a>
+            </li>
+        </ul>
+    </div>
+
+    <footer>
+        <div class="bottom-navigation">
+            <a href="/login" class="home"><span class="btn"></span></a>
+            <a href="./getLocation" class="like"><span class="btn"></span></a>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="icon-gear"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a id="deleteAccountBtn" class="dropdown-item" href="#">Delete Account</a></li>
+                    <li><a class="dropdown-item" href="/userEditAccount">Edit Account</a></li>
+                </ul>
+            </div>
+            <a id="addfriends" href="#" class="add"><span class="btn"></span></a>
+        </div>
+    </footer>
+
+    <!-- Modal -->
+    <div class="modal fade" id="locationErrorModal" tabindex="-1" aria-labelledby="locationErrorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="locationErrorModalLabel">Location Error</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    User has chosen not to show location.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       document.addEventListener("DOMContentLoaded", function() {
+    var mapContainer = document.getElementById('map-container');
+    var map = L.map(mapContainer).setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=1a3450467c924eb6a40d85a2098898bd', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    function addMarker(lat, lon, name, iconUrl) {
+        return L.marker([lat, lon], {
+            icon: L.icon({
+                iconUrl: iconUrl,
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        }).addTo(map).bindPopup(name);
+    }
+
+    var userLocationElement = document.getElementById('user-location');
+    var userLat = parseFloat(userLocationElement.getAttribute('data-lat'));
+    var userLon = parseFloat(userLocationElement.getAttribute('data-lon'));
+
+    if (userLat && userLon) {
+        map.setView([userLat, userLon], 13);
+        var userMarker = addMarker(userLat, userLon, 'You are here!', 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png');
+        userMarker.openPopup();
+    } else {
+        var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
+        locationErrorModal.show();
+    }
+
+    var friends = document.querySelectorAll('.dropdown-menu li a');
+    friends.forEach(function(friend) {
+        var lat = parseFloat(friend.getAttribute('data-lat'));
+        var lon = parseFloat(friend.getAttribute('data-lon'));
+        var name = friend.textContent.trim();
+
+        if (lat && lon) {
+            var marker = addMarker(lat, lon, name, 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png');
+            friend.addEventListener('click', function() {
+                map.setView([lat, lon], 13);
+                marker.openPopup();
+            });
+        } else {
+            friend.addEventListener('click', function() {
+                var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
+                locationErrorModal.show();
+            });
+        }
+    });
+});
+
+    </script>
+    
+</body>
+</html>
