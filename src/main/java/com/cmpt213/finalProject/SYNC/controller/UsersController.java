@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,13 +19,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cmpt213.finalProject.SYNC.models.UserFriendKey;
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserPost;
+import com.cmpt213.finalProject.SYNC.repository.UserRepo;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
+
 import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
+
+
+
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -33,6 +42,7 @@ public class UsersController {
 
     @Autowired
     private UserRepository userRepository;
+    
 
     @Autowired
     private UsersService userService;
@@ -42,6 +52,12 @@ public class UsersController {
 
      @Autowired
     private ImgurService imgurService;
+
+    @Autowired
+    private UserRepo userRepoMaps; 
+    
+
+    
 
     @GetMapping("/")
     public String getHomePage() {
@@ -80,12 +96,13 @@ public class UsersController {
         userModel.setLocation("not-given");
         userModel.setPhoneNumber("");
         userModel.setProfilePictureURL("");
-
+        userModel.setLongitude(0.0);
+        userModel.setLatitude(0.0);
        
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
-                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL());
+                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(), userModel.getLatitude(), userModel.getLongitude());
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
@@ -187,6 +204,7 @@ public class UsersController {
         if (session != null) {
             session.invalidate();
         }
+    
         return "redirect:/login";
     }
 
@@ -267,7 +285,7 @@ public class UsersController {
         System.out.println(userModel.getGender());
 
         UserModel updatedUser = userService.updateUser(sessionUser.getLogin(), userModel.getDob(),
-                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation());
+                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation(), userModel.getLatitude(), userModel.getLongitude());
 
         if (updatedUser == null) {
             model.addAttribute("error", "Failed to update user information.");
@@ -308,7 +326,7 @@ public class UsersController {
         }
 
         UserModel updatedUser = userService.updateUser(sessionUser.getLogin(), userModel.getDob(),
-                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation());
+                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation(), userModel.getLatitude(), userModel.getLongitude());
 
         if (updatedUser == null) {
             model.addAttribute("error", "Failed to update user information.");
@@ -434,6 +452,7 @@ public class UsersController {
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
         return userService.findGotFriendRequests(sessionUser);
     }
+    
     @GetMapping("/users/view")
     public String getAllUsers(Model model){
         System.out.println("Getting all users");
@@ -443,4 +462,53 @@ public class UsersController {
         model.addAttribute("us", users);
         return "showAll";
     }
+    // @GetMapping("/maps")
+    // public String getMaps(Model model) {
+    //     Map<String, String> friendLocation = new HashMap<>();
+    //     friendLocation.put("location", "New York");
+    //     model.addAttribute("friendLocation", friendLocation);
+    //     return "Maps";
+    // }
+
+    @GetMapping("/getLocation")
+    public String getLocation(Model model, HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+    
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
+    
+        UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+        if (user == null) {
+            return "redirect:/login";
+        }
+         
+        // Assuming you have a method to retrieve all friends
+        List<UserFriendKey> friends = user.getFriends(); 
+    
+        // Extract friends' locations
+        List<Map<String, Object>> friendsLocations = friends.stream()
+            .map(friend -> {
+                UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
+                if (friendUser != null) {
+                    Map<String, Object> locationData = new HashMap<>();
+                    locationData.put("login", friendUser.getLogin());
+                    locationData.put("location", friendUser.getLocation());
+                    locationData.put("latitude", friendUser.getLatitude());
+                    locationData.put("longitude", friendUser.getLongitude());
+                    return locationData;
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    
+        model.addAttribute("user", user);
+        model.addAttribute("friends", friends);
+        model.addAttribute("friendsLocations", friendsLocations);
+    
+        return "Maps";
+    }
+
+   
 }
