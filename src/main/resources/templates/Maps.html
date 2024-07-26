@@ -81,8 +81,10 @@
             Select Friend
         </button>
         <ul class="dropdown-menu" aria-labelledby="friendsDropdown">
-            <li><a class="dropdown-item" href="#" id="user-location">Me</a></li>
-            <li class="dropdown-item" th:each="friendLocation : ${friendsLocations}" th:id="'friend-' + ${friendLocation['login']}" th:data-lat="${friendLocation['latitude']}" th:data-lon="${friendLocation['longitude']}" th:text="${friendLocation['login']}"></li>
+            <li><a class="dropdown-item" id="user-location" th:data-lat="${user.latitude}" th:data-lon="${user.longitude}">Me</a></li>
+                         <li th:each="friendLocation : ${friendsLocations}">
+                <a class="dropdown-item" th:id="'friend-' + ${friendLocation.login}" th:data-lat="${friendLocation.latitude}" th:data-lon="${friendLocation.longitude}" th:text="${friendLocation.login}"></a>
+            </li>
         </ul>
     </div>
 
@@ -122,74 +124,61 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var mapContainer = document.getElementById('map-container');
-            var map = L.map(mapContainer);
+       document.addEventListener("DOMContentLoaded", function() {
+    var mapContainer = document.getElementById('map-container');
+    var map = L.map(mapContainer).setView([51.505, -0.09], 13);
 
-            L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=1a3450467c924eb6a40d85a2098898bd', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+    L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=1a3450467c924eb6a40d85a2098898bd', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-            function addMarker(lat, lon, name, iconUrl) {
-                return L.marker([lat, lon], {
-                    icon: L.icon({
-                        iconUrl: iconUrl,
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map).bindPopup(name);
-            }
+    function addMarker(lat, lon, name, iconUrl) {
+        return L.marker([lat, lon], {
+            icon: L.icon({
+                iconUrl: iconUrl,
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        }).addTo(map).bindPopup(name);
+    }
 
-            var userMarker;
+    var userLocationElement = document.getElementById('user-location');
+    var userLat = parseFloat(userLocationElement.getAttribute('data-lat'));
+    var userLon = parseFloat(userLocationElement.getAttribute('data-lon'));
 
-            // Add markers for each friend
-            var friends = document.querySelectorAll('.dropdown-menu li');
-            friends.forEach(function(friend) {
-                var lat = friend.getAttribute('data-lat');
-                var lon = friend.getAttribute('data-lon');
-                var name = friend.textContent.trim();
+    if (userLat && userLon) {
+        map.setView([userLat, userLon], 13);
+        var userMarker = addMarker(userLat, userLon, 'You are here!', 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png');
+        userMarker.openPopup();
+    } else {
+        var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
+        locationErrorModal.show();
+    }
 
-                if (lat && lon) {
-                    var marker = addMarker(lat, lon, name, 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png'); // Default marker icon
+    var friends = document.querySelectorAll('.dropdown-menu li a');
+    friends.forEach(function(friend) {
+        var lat = parseFloat(friend.getAttribute('data-lat'));
+        var lon = parseFloat(friend.getAttribute('data-lon'));
+        var name = friend.textContent.trim();
 
-                    // Add click event to dropdown item
-                    friend.addEventListener('click', function() {
-                        map.setView([lat, lon], 13);
-                        marker.openPopup();
-                    });
-                } else {
-                    // Show modal if location is not available
-                    friend.addEventListener('click', function() {
-                        var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
-                        locationErrorModal.show();
-                    });
-                }
+        if (lat && lon) {
+            var marker = addMarker(lat, lon, name, 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png');
+            friend.addEventListener('click', function() {
+                map.setView([lat, lon], 13);
+                marker.openPopup();
             });
+        } else {
+            friend.addEventListener('click', function() {
+                var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
+                locationErrorModal.show();
+            });
+        }
+    });
+});
 
-            // Add user location marker if geolocation is available
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var lat = position.coords.latitude;
-                    var lon = position.coords.longitude;
-                    map.setView([lat, lon], 13); // Set the map view to user's location
-
-                    userMarker = addMarker(lat, lon, 'You are here!', 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png'); // Double size marker icon for user
-
-                    userMarker.openPopup();
-
-                    document.getElementById('user-location').addEventListener('click', function() {
-                        map.setView([lat, lon], 13);
-                        userMarker.openPopup();
-                    });
-                }, function(error) {
-                    console.log("Geolocation error: " + error.message);
-                });
-            } else {
-                console.log("Geolocation is not supported by this browser.");
-            }
-        });
     </script>
+    
 </body>
 </html>

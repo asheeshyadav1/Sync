@@ -190,30 +190,31 @@
                     </form>
                     
                     <script>
-                    function initAutocomplete() {
-                        const input = document.getElementById('location');
-                        const autocomplete = new google.maps.places.Autocomplete(input, {
-                            types: ['(cities)'],
+                        function initAutocomplete() {
+                            const input = document.getElementById('location');
+                            const autocomplete = new google.maps.places.Autocomplete(input, {
+                                types: ['address'],
+                            });
+                    
+                            autocomplete.addListener('place_changed', function() {
+                                const place = autocomplete.getPlace();
+                                if (place.geometry) {
+                                    const lat = place.geometry.location.lat();
+                                    const lng = place.geometry.location.lng();
+                                    console.log(`Latitude: ${lat}, Longitude: ${lng}`);
+                    
+                                    // Set latitude and longitude values to hidden input fields
+                                    document.getElementById('latitude').value = lat;
+                                    document.getElementById('longitude').value = lng;
+                                }
+                            });
+                        }
+                    
+                        document.addEventListener('DOMContentLoaded', function() {
+                            initAutocomplete();
                         });
-                    
-                        autocomplete.addListener('place_changed', function() {
-                            const place = autocomplete.getPlace();
-                            if (place.geometry) {
-                                const lat = place.geometry.location.lat();
-                                const lng = place.geometry.location.lng();
-                                console.log(`Latitude: ${lat}, Longitude: ${lng}`);
-                    
-                                // Set latitude and longitude values to hidden input fields
-                                document.getElementById('latitude').value = lat;
-                                document.getElementById('longitude').value = lng;
-                            }
-                        });
-                    }
-                    
-                    document.addEventListener('DOMContentLoaded', function() {
-                        initAutocomplete();
-                    });
                     </script>
+                    
                     
 
 
