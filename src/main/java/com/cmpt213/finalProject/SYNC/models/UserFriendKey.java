@@ -9,6 +9,7 @@ public class UserFriendKey implements Serializable {
 
     private Integer userId;
     private Integer friendId;
+    
 
     public UserFriendKey() {
     }
@@ -33,7 +34,9 @@ public class UserFriendKey implements Serializable {
     public void setFriendId(Integer friendId) {
         this.friendId = friendId;
     }
+    
 
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

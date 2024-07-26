@@ -26,12 +26,14 @@ public class UserModel {
     String location;
     String phoneNumber;
     String profilePictureURL;
+    Double latitude;
+    Double longitude;
 
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
     @AttributeOverrides({
         @AttributeOverride(name = "userId", column = @Column(name = "user_id", insertable = false, updatable = false)),
-        @AttributeOverride(name = "friendId", column = @Column(name = "friend_id"))
+        @AttributeOverride(name = "friendId", column = @Column(name = "friend_id")),
     })
     List<UserFriendKey> friends = new ArrayList<>();
 
@@ -54,6 +56,8 @@ public class UserModel {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<UserPost> userPosts = new ArrayList<>();
+
+    
 
     // Getters and Setters
     public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
@@ -163,6 +167,7 @@ public class UserModel {
 
     public void setFriends(List<UserFriendKey> friends) {
         this.friends = friends;
+        
     }
 
     public List<UserFriendRequestKey> getFriendRequests() {
@@ -189,6 +194,8 @@ public class UserModel {
         this.userPosts = userPosts;
     }
 
+    
+
     public String getProfilePictureURL() {
         return profilePictureURL;
     }
@@ -197,10 +204,23 @@ public class UserModel {
         this.profilePictureURL = profilePictureURL;
     }
 
+    public Double getLatitude() {
+        return latitude;
+    }
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+    public Double getLongitude() {
+        return longitude;
+    }
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
     @Override
     public String toString() {
         return "UserModel [id=" + id + ", login=" + login + ", email=" + email + ", isAdmin=" + isAdmin + ", isActive=" + isActive + "]";
     }
+
 
     public static String hashFunc(String password) {
         // Step 1: Mirror the password

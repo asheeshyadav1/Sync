@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", function() {
             var lat = position.coords.latitude;
             var lon = position.coords.longitude;
             map.setView([lat, lon], 13); // Set the map view to user's location
+            //console log the exact coordinates 
+            console.log("Your coordinates are: " + lat + ", " + lon);
 
             // Add a marker at the user's location
             L.marker([lat, lon]).addTo(map)
