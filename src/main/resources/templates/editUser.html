@@ -8,6 +8,8 @@
     <link href="/css/header.css" rel="stylesheet">
     <link href="/css/footer.css" rel="stylesheet">
     <link href="/css/personal-account.css" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAo9WVNVu7tXMAyy_qosXZ8qRuzfL6JjNU&libraries=places" defer></script>    
+    <script src="/src/main/resources/static/JS/LocationFinder.js" defer></script>
     <style>
     .bottom-navigation {
     position: fixed;
@@ -368,6 +370,31 @@
     </div>
 </div>
 </body>
+<script>
+    function initAutocomplete() {
+        const input = document.getElementById('location');
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+            types: ['address'],
+        });
+
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+                console.log(`Latitude: ${lat}, Longitude: ${lng}`);
+
+                // Set latitude and longitude values to hidden input fields
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initAutocomplete();
+    });
+</script>
 <footer>
     <div class="bottom-navigation">
         <a href="/login" class="home"><span class="btn"></span></a>

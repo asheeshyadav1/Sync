@@ -506,6 +506,8 @@ public class UsersController {
         model.addAttribute("user", user);
         model.addAttribute("friends", friends);
         model.addAttribute("friendsLocations", friendsLocations);
+        
+
     
         return "Maps";
     }
