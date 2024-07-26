@@ -132,6 +132,12 @@ public class UsersServiceImpl implements UsersService {
         userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
+    public List<UserFriendKey> getAllFriends(UserModel sessionUser){
+        return sessionUser.getFriends();
+    }
+  
+
     public void deleteUserById(Integer userId) {
         userRepository.deleteById(userId);
     }

@@ -462,6 +462,8 @@ public class UsersController {
         model.addAttribute("us", users);
         return "showAll";
     }
+
+  
     // @GetMapping("/maps")
     // public String getMaps(Model model) {
     //     Map<String, String> friendLocation = new HashMap<>();
@@ -513,4 +515,5 @@ public class UsersController {
     }
 
    
+
 }

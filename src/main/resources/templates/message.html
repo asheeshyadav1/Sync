@@ -71,8 +71,7 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">
-            <img src="/logo/logo.png" alt="Sync Logo">
+      
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,7 +99,12 @@
 </nav>
 
 <div class="container chat-container">
-    <div class="row justify-content-center">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="list-group" id="friendsList">
+                <!-- Friends will be dynamically added here -->
+            </div>
+        </div>
         <div class="col-md-8">
             <div class="chat-box" id="chatBox">
                 <!-- Messages will be dynamically added here -->
@@ -129,57 +133,85 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chatBox = document.getElementById('chatBox');
-        const messageInput = document.getElementById('messageInput');
-        const sendMessageBtn = document.getElementById('sendMessageBtn');
-        const senderId = 1; // Replace with actual sender ID
-        const receiverId = 2; // Replace with actual receiver ID
+    let stompClient = null;
+    let selectedFriendId = null;
+    let currentUserId = null;
 
-        // Connect to WebSocket server
+    function connect() {
         const socket = new SockJS('/ws');
-        const stompClient = Stomp.over(socket);
-
+        stompClient = Stomp.over(socket);
         stompClient.connect({}, function (frame) {
             console.log('Connected: ' + frame);
-
-            // Subscribe to private messages
-            stompClient.subscribe('/user/' + receiverId + '/queue/private', function (message) {
-                const msg = JSON.parse(message.body);
-                addMessage(msg.content, false);
-            });
         });
+    }
 
-        function addMessage(message, sent = true) {
-            const messageItem = document.createElement('div');
-            messageItem.classList.add('message-item');
-            messageItem.classList.add(sent ? 'message-sent' : 'message-received');
-            messageItem.textContent = message;
-            chatBox.appendChild(messageItem);
-            chatBox.scrollTop = chatBox.scrollHeight;
+    function addMessage(message, sent = true) {
+        const messageItem = document.createElement('div');
+        messageItem.classList.add('message-item');
+        messageItem.classList.add(sent ? 'message-sent' : 'message-received');
+        messageItem.textContent = message;
+        document.getElementById('chatBox').appendChild(messageItem);
+        document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value;
+        if (message.trim() && selectedFriendId) {
+            const chatMessage = {
+                senderId: currentUserId,
+                receiverId: selectedFriendId,
+                content: message
+            };
+            stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
+            addMessage(message);
+            messageInput.value = '';
         }
+    }
 
-        sendMessageBtn.addEventListener('click', function() {
-            const message = messageInput.value;
-            if (message.trim()) {
-                const msg = {
-                    content: message,
-                    senderId: senderId,
-                    receiverId: receiverId
-                };
-                stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(msg));
-                addMessage(message);
-                messageInput.value = '';
-            }
-        });
+    function fetchFriends() {
+        fetch('/friends')
+            .then(response => response.json())
+            .then(friends => {
+                const friendsList = document.getElementById('friendsList');
+                friends.forEach(friend => {
+                    const friendItem = document.createElement('a');
+                    friendItem.classList.add('list-group-item', 'list-group-item-action');
+                    friendItem.textContent = friend.name;
+                    friendItem.href = "#";
+                    friendItem.onclick = () => selectFriend(friend.id);
+                    friendsList.appendChild(friendItem);
+                });
+            })
+            .catch(error => console.error('Error fetching friends:', error));
+    }
 
-        messageInput.addEventListener('keypress', function(event) {
+    function selectFriend(friendId) {
+        selectedFriendId = friendId;
+        document.getElementById('chatBox').innerHTML = '';
+        // Load previous messages with the selected friend (not implemented in this example)
+    }
+
+    function fetchCurrentUser() {
+        fetch('/currentUser')
+            .then(response => response.json())
+            .then(user => {
+                currentUserId = user.id;
+            })
+            .catch(error => console.error('Error fetching current user:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        connect();
+        fetchCurrentUser();
+        fetchFriends();
+        document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
-                sendMessageBtn.click();
+                sendMessage();
             }
         });
     });
