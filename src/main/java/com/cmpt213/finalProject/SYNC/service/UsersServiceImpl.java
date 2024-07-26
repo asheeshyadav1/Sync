@@ -1,8 +1,5 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -126,6 +123,12 @@ public class UsersServiceImpl implements UsersService {
     public void saveUser(UserModel user) {
         userRepository.save(user);
     }
+
+    @Transactional(readOnly = true)
+    public List<UserFriendKey> getAllFriends(UserModel sessionUser){
+        return sessionUser.getFriends();
+    }
+  
 
     public void deleteUserById(Integer userId) {
         userRepository.deleteById(userId);

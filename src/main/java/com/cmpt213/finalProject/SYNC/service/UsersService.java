@@ -1,12 +1,13 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-import com.cmpt213.finalProject.SYNC.models.UserModel;
-
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.cmpt213.finalProject.SYNC.models.UserFriendKey;
+import com.cmpt213.finalProject.SYNC.models.UserModel;
 
 @Service
 public interface UsersService {
@@ -44,4 +45,7 @@ public interface UsersService {
 
     @Transactional(readOnly = true)
     public List<UserModel> findGotFriendRequests(UserModel sessionUser);
+   
+    @Transactional(readOnly = true)
+    public List<UserFriendKey> getAllFriends(UserModel sessionUser);
 }

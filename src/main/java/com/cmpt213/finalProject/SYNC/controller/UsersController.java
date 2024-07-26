@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cmpt213.finalProject.SYNC.models.UserFriendKey;
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserPost;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
@@ -434,6 +436,7 @@ public class UsersController {
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
         return userService.findGotFriendRequests(sessionUser);
     }
+    
     @GetMapping("/users/view")
     public String getAllUsers(Model model){
         System.out.println("Getting all users");
@@ -443,4 +446,6 @@ public class UsersController {
         model.addAttribute("us", users);
         return "showAll";
     }
+  
+
 }
