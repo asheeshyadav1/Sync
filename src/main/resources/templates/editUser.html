@@ -310,6 +310,8 @@
                                     <div class="mb-3">
                                         <label for="location" class="form-label">Location</label>
                                         <input type="text" class="form-control" id="location" name="location" th:field="*{location}">
+                                        <input type="hidden" id="latitude" name="latitude" th:field="*{latitude}">
+                                        <input type="hidden" id="longitude" name="longitude" th:field="*{longitude}">
                                     </div>
                                     <div class="mb-3">
                                         <label for="dob" class="form-label">Date of Birth</label>
@@ -376,25 +378,25 @@
         const autocomplete = new google.maps.places.Autocomplete(input, {
             types: ['address'],
         });
-
+    
         autocomplete.addListener('place_changed', function() {
             const place = autocomplete.getPlace();
             if (place.geometry) {
                 const lat = place.geometry.location.lat();
                 const lng = place.geometry.location.lng();
                 console.log(`Latitude: ${lat}, Longitude: ${lng}`);
-
+    
                 // Set latitude and longitude values to hidden input fields
                 document.getElementById('latitude').value = lat;
                 document.getElementById('longitude').value = lng;
             }
         });
     }
-
+    
     document.addEventListener('DOMContentLoaded', function() {
         initAutocomplete();
     });
-</script>
+    </script>
 <footer>
     <div class="bottom-navigation">
         <a href="/login" class="home"><span class="btn"></span></a>

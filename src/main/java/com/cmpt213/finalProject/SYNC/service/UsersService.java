@@ -50,6 +50,8 @@ public interface UsersService {
     @Transactional(readOnly = true)
     public List<UserFriendKey> getAllFriends(UserModel sessionUser);
 
+   
+
 
     
 }
