@@ -15,16 +15,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+// import com.cmpt213.finalProject.SYNC.models.ChatMessage;
 import com.cmpt213.finalProject.SYNC.models.UserFriendKey;
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserPost;
 import com.cmpt213.finalProject.SYNC.repository.UserRepo;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
-
+// import com.cmpt213.finalProject.SYNC.service.ChatMessageService;
 import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
@@ -55,6 +57,9 @@ public class UsersController {
 
     @Autowired
     private UserRepo userRepoMaps; 
+
+    @Autowired
+    // private ChatMessageService chatMessageService;
     
 
     
@@ -514,6 +519,110 @@ public class UsersController {
         return "Maps";
     }
 
-   
+    // @GetMapping("/friends")
+    // public String getFriends(Model model, HttpSession session) {
+    //     UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+    
+    //     if (sessionUser == null) {
+    //         return "redirect:/login";
+    //     }
+    
+    //     UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+    //     if (user == null) {
+    //         return "redirect:/login";
+    //     }
+
+    //     // Assuming you have a method to retrieve all friends
+    //     List<UserFriendKey> friends = user.getFriends();
+
+        
+    //     // Extract friends' locations
+    //     List<Map<String, Object>> friendMessages = friends.stream()
+    //         .map(friend -> {
+    //             UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
+    //             if (friendUser != null) {
+    //                 Map<String, Object> friendsmessage = new HashMap<>();
+    //                 friendsmessage.put("login", friendUser.getLogin());
+    //                 friendsmessage.put("Id", friendUser.getId());
+    //                 return friendsmessage;
+    //             }
+    //             return null;
+    //         })
+    //         .filter(Objects::nonNull)
+    //         .collect(Collectors.toList());
+
+    //     model.addAttribute("user", user);
+    //     model.addAttribute("friends", friends);
+    //     model.addAttribute("friendMessages", friendMessages);
+       
+    //     return "friends"; // Return the name of the view template
+    // }
+    
+    // @PostMapping("/sendMessage")
+    // public String sendMessage(Model model, HttpSession session, @RequestParam Integer receiverId, @RequestParam String content) {
+    //     UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+    
+    //     if (sessionUser == null) {
+    //         return "redirect:/login";
+    //     }
+    
+    //     UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+    //     if (user == null) {
+    //         return "redirect:/login";
+    //     }
+    
+    //     List<UserModel> receiver_all = userRepository.findByFriendsUserId(receiverId);
+
+    //     UserModel receiver = receiver_all.get(0);
+    
+    //     if (receiver != null) {
+    //         chatMessageService.sendMessage(user, receiver, content);
+    //     } else {
+    //         // Handle the case where the receiver is not found
+    //         model.addAttribute("error", "Receiver not found");
+    //         return "errorPage"; // Redirect to an error page or handle accordingly
+    //     }
+    
+    //     return "redirect:/directMessaging"; // Redirect to the direct messaging page
+    // }
+    @GetMapping("/Dm")
+    public String getFriends(Model model, HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+    
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
+    
+        UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        // Assuming you have a method to retrieve all friends
+        List<UserFriendKey> friends = user.getFriends();
+
+        
+        // Extract friends' ID
+        List<Map<String, Object>> friendMessages = friends.stream()
+            .map(friend -> {
+                UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
+                if (friendUser != null) {
+                    Map<String, Object> friendsmessage = new HashMap<>();
+                    friendsmessage.put("login", friendUser.getLogin());
+                    // friendsmessage.put("Id", friendUser.getId());
+                    return friendsmessage;
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+        model.addAttribute("user", user);
+        model.addAttribute("friends", friends);
+        model.addAttribute("friendMessages", friendMessages);
+       
+        
+        return "message"; // Return the name of the view template
+    }
 
 }

@@ -68,10 +68,10 @@ public class UserModel {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<UserPost> userPosts = new ArrayList<>();
-    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> sentMessages = new ArrayList<>();
-    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> receivedMessages = new ArrayList<>();
+    // @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private List<ChatMessage> sentMessages = new ArrayList<>();
+    // @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private List<ChatMessage> receivedMessages = new ArrayList<>();
 
     
 
@@ -234,21 +234,21 @@ public class UserModel {
         this.longitude = longitude;
     }
 
-    public List<Message> getSentMessages() {
-        return sentMessages;
-    }
+    // public List<ChatMessage> getSentMessages() {
+    //     return sentMessages;
+    // }
 
-    public void setSentMessages(List<Message> sentMessages) {
-        this.sentMessages = sentMessages;
-    }
+    // public void setSentMessages(List<ChatMessage> sentMessages) {
+    //     this.sentMessages = sentMessages;
+    // }
 
-    public List<Message> getReceivedMessages() {
-        return receivedMessages;
-    }
+    // public List<ChatMessage> getReceivedMessages() {
+    //     return receivedMessages;
+    // }
 
-    public void setReceivedMessages(List<Message> receivedMessages) {
-        this.receivedMessages = receivedMessages;
-    }
+    // public void setReceivedMessages(List<ChatMessage> receivedMessages) {
+    //     this.receivedMessages = receivedMessages;
+    // }
     
 
     @Override
