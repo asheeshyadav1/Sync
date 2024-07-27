@@ -58,8 +58,7 @@ public class UsersController {
     @Autowired
     private UserRepo userRepoMaps; 
 
-    @Autowired
-    // private ChatMessageService chatMessageService;
+    
     
 
     
@@ -76,16 +75,29 @@ public class UsersController {
     }
 
     @GetMapping("/login")
-    public String getLoginPage(Model model, HttpServletRequest request, HttpSession session) {
-        UserModel user = (UserModel) session.getAttribute("session_user");
-        if (user == null) {
-            model.addAttribute("user", new UserModel());
-            return "login_page";
-        } else {
-            model.addAttribute("userLogin", user.getLogin());
-            return "personalAccount";
-        }
+public String getLoginPage(Model model, HttpServletRequest request, HttpSession session, HttpServletResponse response) {
+    UserModel user = (UserModel) session.getAttribute("session_user");
+    if (user == null) {
+        model.addAttribute("user", new UserModel());
+        
+        // Set headers to prevent caching
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
+        response.setHeader("Pragma", "no-cache"); // HTTP 1.0
+        response.setDateHeader("Expires", 0); // Proxies
+
+        return "login_page";
+    } else {
+        model.addAttribute("userLogin", user.getLogin());
+        
+        // Set a cookie with the session token
+        Cookie sessionCookie = new Cookie("session", session.getId());
+        sessionCookie.setHttpOnly(true);
+        sessionCookie.setPath("/");
+        response.addCookie(sessionCookie);
+
+        return "personalAccount";
     }
+}
 
     @PostMapping("/register")
     public String registerUser(@ModelAttribute UserModel userModel, Model model, HttpServletRequest request,
@@ -209,6 +221,17 @@ public class UsersController {
         if (session != null) {
             session.invalidate();
         }
+    
+        // Clear the session cookie
+        Cookie sessionCookie = new Cookie("session", null);
+        sessionCookie.setPath("/*");
+        sessionCookie.setMaxAge(0);
+        response.addCookie(sessionCookie);
+    
+        // Set headers to prevent caching
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
+        response.setHeader("Pragma", "no-cache"); // HTTP 1.0
+        response.setDateHeader("Expires", 0); // Proxies
     
         return "redirect:/login";
     }
@@ -586,43 +609,45 @@ public class UsersController {
     //     return "redirect:/directMessaging"; // Redirect to the direct messaging page
     // }
     @GetMapping("/Dm")
-    public String getFriends(Model model, HttpSession session) {
-        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-    
-        if (sessionUser == null) {
-            return "redirect:/login";
-        }
-    
-        UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
-        if (user == null) {
-            return "redirect:/login";
-        }
+public String getFriends(Model model, HttpSession session) {
+    UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
-        // Assuming you have a method to retrieve all friends
-        List<UserFriendKey> friends = user.getFriends();
-
-        
-        // Extract friends' ID
-        List<Map<String, Object>> friendMessages = friends.stream()
-            .map(friend -> {
-                UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
-                if (friendUser != null) {
-                    Map<String, Object> friendsmessage = new HashMap<>();
-                    friendsmessage.put("login", friendUser.getLogin());
-                    // friendsmessage.put("Id", friendUser.getId());
-                    return friendsmessage;
-                }
-                return null;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-        model.addAttribute("user", user);
-        model.addAttribute("friends", friends);
-        model.addAttribute("friendMessages", friendMessages);
-       
-        
-        return "message"; // Return the name of the view template
+    if (sessionUser == null) {
+        return "redirect:/login";
     }
+
+    UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+    if (user == null) {
+        return "redirect:/login";
+    }
+
+    // Assuming you have a method to retrieve all friends
+    List<UserFriendKey> friends = user.getFriends();
+
+    // Extract friends' ID and their messages
+    List<Map<String, Object>> friendMessages = friends.stream()
+        .map(friend -> {
+            UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
+            if (friendUser != null) {
+                Map<String, Object> friendsmessage = new HashMap<>();
+                friendsmessage.put("login", friendUser.getLogin());
+
+               
+
+                return friendsmessage;
+            }
+            return null;
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    model.addAttribute("user", user);
+    model.addAttribute("friends", friends);
+    model.addAttribute("friendMessages", friendMessages);
+    
+
+    return "message"; // Return the name of the view template
+}
+
 
 }

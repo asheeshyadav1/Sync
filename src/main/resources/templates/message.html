@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Direct Messaging</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link href="/css/header.css" rel="stylesheet">
     <!-- <link href="/css/footer.css" rel="stylesheet"> -->
     <link href="/css/body.css" rel="stylesheet">
@@ -275,76 +276,120 @@
             </div>
         </div>
     </nav>
-
-<div class="chat-container">
-    <div class="chat-list">
-        <div class="list-group">
-            <a class="list-group-item list-group-item-action active" href="#" th:data-id="${user.login}"></a>
-            <a class="list-group-item list-group-item-action chat-item" href="#" th:each="friendMessage : ${friendMessages}"
-               th:data-id="${friendMessage.login}" th:text="${friendMessage.login}" onclick="openChat(event)"></a>
+    <div class="chat-container">
+        <div class="chat-list">
+            <div class="list-group">
+                <a class="list-group-item list-group-item-action active" href="#" th:data-id="${user.login}"></a>
+                <a class="list-group-item list-group-item-action chat-item" href="#" th:each="friendMessage : ${friendMessages}"
+                   th:data-id="${friendMessage.login}" th:text="${friendMessage.login}" onclick="openChat(event)"></a>
+            </div>
+        </div>
+        <div class="chat-box" id="chatBox">
+            <div id="messagesContainer">
+                <!-- Messages will be dynamically loaded here -->
+            </div>
+            <div class="message-input">
+                <textarea class="form-control" id="messageInput" placeholder="Type a message..."></textarea>
+                <button class="btn" onclick="sendMessage()">Send</button>
+            </div>
         </div>
     </div>
-    <div class="chat-box" id="chatBox">
-        <div id="messagesContainer">
-            <!-- Messages will be dynamically loaded here -->
-        </div>
-        <div class="message-input">
-            <textarea class="form-control" id="messageInput" placeholder="Type a message..."></textarea>
-            <button class="btn" onclick="sendMessage()">Send</button>
-        </div>
-    </div>
-</div>
-
-
-
-<!-- Hidden element to store the current user's login -->
-<input type="hidden" id="currentUserLogin" th:value="${user.login}"/>
-
-<script>
-    let currentUser = document.getElementById('currentUserLogin').value;
-
-    function openChat(event) {
-        event.preventDefault();
-        var friendLogin = event.currentTarget.getAttribute('data-id');
-        var chatBox = document.getElementById('chatBox');
-        var messagesContainer = document.getElementById('messagesContainer');
-
-        messagesContainer.innerHTML = '<p>Chat with ' + friendLogin + '</p><p>Messages here...</p>';
-
-        var chatItems = document.querySelectorAll('.chat-item');
-        chatItems.forEach(item => item.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function sendMessage() {
-        var messageInput = document.getElementById('messageInput');
-        var messageText = messageInput.value.trim();
-
-        if (messageText !== '') {
-            var messagesContainer = document.getElementById('messagesContainer');
-            var activeChatItem = document.querySelector('.chat-item.active');
-            if (activeChatItem) {
-                var friendLogin = activeChatItem.getAttribute('data-id');
-                
-                var messageElement = document.createElement('div');
-                messageElement.className = 'message-item message-sent';
-                messageElement.textContent = currentUser +'(You)' +': ' + messageText;
-
-                messagesContainer.appendChild(messageElement);
-
-                messageInput.value = '';
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            } else {
-                alert('Please select a chat to send a message.');
+    
+    <!-- Hidden element to store the current user's login -->
+    <input type="hidden" id="currentUserLogin" th:value="${user.login}"/>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let currentUser = document.getElementById('currentUserLogin').value;
+            let stompClient = null;
+    
+            function connect() {
+                const socket = new SockJS('/ws');
+                stompClient = Stomp.over(socket);
+                stompClient.connect({}, function (frame) {
+                    console.log('Connected: ' + frame);
+    
+                    stompClient.subscribe('/user/topic/messages', function (message) {
+                        showMessage(JSON.parse(message.body));
+                    });
+                });
             }
-        }
-    }
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    
+            function showMessage(message) {
+                var messagesContainer = document.getElementById('messagesContainer');
+                var messageElement = document.createElement('div');
+                messageElement.className = 'message-item ' + (message.sender === currentUser ? 'message-sent' : 'message-received');
+                messageElement.textContent = message.sender + ': ' + message.content;
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+    
+            window.openChat = function (event) {
+                event.preventDefault();
+                var friendLogin = event.currentTarget.getAttribute('data-id');
+                var messagesContainer = document.getElementById('messagesContainer');
+    
+                // Clear the messages container before loading new messages
+                messagesContainer.innerHTML = '';
+    
+                // Fetch messages from the server
+                fetch(`/messages?user=${currentUser}&friend=${friendLogin}`)
+                    .then(response => response.json())
+                    .then(messages => {
+                        messagesContainer.innerHTML = '';
+                        messages.forEach(message => {
+                            var messageElement = document.createElement('div');
+                            messageElement.className = 'message-item ' + (message.sender.login === currentUser ? 'message-sent' : 'message-received');
+                            messageElement.textContent = message.sender.login + ': ' + message.content;
+                            messagesContainer.appendChild(messageElement);
+                        });
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    });
+    
+                var chatItems = document.querySelectorAll('.chat-item');
+                chatItems.forEach(item => item.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+            }
+    
+            window.sendMessage = function () {
+                var messageInput = document.getElementById('messageInput');
+                var messageText = messageInput.value.trim();
+    
+                if (messageText !== '') {
+                    var messagesContainer = document.getElementById('messagesContainer');
+                    var activeChatItem = document.querySelector('.chat-item.active');
+                    if (activeChatItem) {
+                        var friendLogin = activeChatItem.getAttribute('data-id');
+    
+                        // Send message via WebSocket
+                        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+                            'sender': currentUser,
+                            'recipient': friendLogin,
+                            'content': messageText
+                        }));
+    
+                        var messageElement = document.createElement('div');
+                        messageElement.className = 'message-item message-sent';
+                        messageElement.textContent = currentUser + '(You): ' + messageText;
+    
+                        messagesContainer.appendChild(messageElement);
+    
+                        messageInput.value = '';
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    } else {
+                        alert('Please select a chat to send a message.');
+                    }
+                }
+            }
+    
+            connect();
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <!-- <div class="bottom-navigation">
     <a href="/login" class="home"><span class="btn"></span></a>
     <a href="/getLocation" class="like"><span class="btn">
