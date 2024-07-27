@@ -2,8 +2,20 @@ package com.cmpt213.finalProject.SYNC.models;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import jakarta.persistence.*;
+
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users_table")
@@ -26,6 +38,7 @@ public class UserModel {
     String location;
     String phoneNumber;
     String profilePictureURL;
+    //boolean verified;
 
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
@@ -57,6 +70,7 @@ public class UserModel {
 
     // Getters and Setters
     public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
+        super();
         this.login = login;
         this.password = password;
         this.email = email;
@@ -224,4 +238,6 @@ public class UserModel {
         }
         return hashedPass.toString();
     }
+
+    
 }

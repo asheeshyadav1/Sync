@@ -22,11 +22,14 @@ import com.cmpt213.finalProject.SYNC.models.UserPost;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
+import com.cmpt213.finalProject.SYNC.service.SendOtpToMailService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
+
 
 @Controller
 public class UsersController {
@@ -42,6 +45,9 @@ public class UsersController {
 
      @Autowired
     private ImgurService imgurService;
+
+    @Autowired
+    private SendOtpToMailService sendOtpToMailService;
 
     @GetMapping("/")
     public String getHomePage() {
@@ -91,10 +97,12 @@ public class UsersController {
             System.out.println("Registration failed: duplicate user or invalid data");
             return "error_page";
         }
-
+        System.out.println("Sending OTP to " + userModel.getEmail());
+        sendOtpToMailService.sendOtpService(userModel.getEmail());
+        
         model.addAttribute("userLogin", userModel.getLogin());
         request.getSession().setAttribute("session_user", userModel);
-        return "redirect:/intro";
+        return "redirect:/confirm_verification.html";
     }
 
     @PostMapping("/login")
@@ -443,4 +451,30 @@ public class UsersController {
         model.addAttribute("us", users);
         return "showAll";
     }
+
+    @PostMapping("/sendOTP/{email}")
+    public String sendOtpToMail(@PathVariable("email") String email) {
+        System.out.println("Sending OTP to " + email);
+        sendOtpToMailService.sendOtpService(email);
+        return "redirect:/verification";
+    }
+    
+    @GetMapping("/verification")
+    public String twoStepVerification(Model model) {
+        return "verification";
+    }
+
+    @PostMapping("/verification/{email}")
+    public String verifyOTP(@RequestParam("OTP") String enteredOTP, @RequestParam("email") String email) {
+        System.out.println("Verifying OTP for " + email);
+        boolean isVerified = sendOtpToMailService.verifyOTP(email, enteredOTP);
+        if (isVerified) {
+            return "redirect:/intro";
+        } else {
+            return "redirect:/verification";
+            }
+    }
+    
+    
+    
 }

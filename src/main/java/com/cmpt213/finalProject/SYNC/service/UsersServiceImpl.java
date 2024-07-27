@@ -1,8 +1,5 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -277,4 +274,5 @@ public class UsersServiceImpl implements UsersService {
         }
         return false;
     }
+
 }
