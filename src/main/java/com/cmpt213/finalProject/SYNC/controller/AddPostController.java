@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserPost;
+import com.cmpt213.finalProject.SYNC.service.PostInteractionResponse;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
@@ -41,9 +42,8 @@ public class AddPostController {
     }
 
     @PostMapping("/addPost")
-    public String addPost(@RequestParam("caption") String caption,
-                          @RequestParam("image") MultipartFile image,
-                          HttpSession session, Model model) throws IOException {
+    public String addPost(@RequestParam("caption") String caption, @RequestParam("image") MultipartFile image,
+            HttpSession session, Model model) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         if (sessionUser == null) {
             return "redirect:/login";
@@ -69,24 +69,32 @@ public class AddPostController {
     }
 
     @PostMapping("/api/posts/{postId}/like")
-    public ResponseEntity<Void> likePost(@PathVariable Integer postId, HttpSession session) {
+    public ResponseEntity<PostInteractionResponse> likePost(@PathVariable Integer postId, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         if (sessionUser == null) {
             throw new RuntimeException("User not authenticated");
         }
 
-        System.out.println("\n\n" + postId + "\n\n");
         postService.likePost(sessionUser.getId(), postId);
-        return ResponseEntity.ok().build();
+        UserPost post = postService.findPostById(postId); // Assuming this method fetches the post details
+        int likes = post.getLikes().size();
+        int dislikes = post.getDislikes().size();
+
+        return ResponseEntity.ok(new PostInteractionResponse(likes, dislikes));
     }
 
     @PostMapping("/api/posts/{postId}/dislike")
-    public ResponseEntity<Void> dislikePost(@PathVariable Integer postId, HttpSession session) {
+    public ResponseEntity<PostInteractionResponse> dislikePost(@PathVariable Integer postId, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         if (sessionUser == null) {
             throw new RuntimeException("User not authenticated");
         }
+
         postService.dislikePost(sessionUser.getId(), postId);
-        return ResponseEntity.ok().build();
+        UserPost post = postService.findPostById(postId); // Assuming this method fetches the post details
+        int likes = post.getLikes().size();
+        int dislikes = post.getDislikes().size();
+
+        return ResponseEntity.ok(new PostInteractionResponse(likes, dislikes));
     }
 }

@@ -266,7 +266,12 @@ public class UsersController {
         if (sessionUser == null) {
             return List.of();
         }
-        return userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
+
+        // Fetch the users from the service
+        List<UserModel> users = userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
+
+        // Limit the number of users to 10
+        return users.stream().limit(10).collect(Collectors.toList());
     }
 
     @GetMapping("/userEditAccount")
