@@ -45,13 +45,16 @@ public class PostService {
         UserModel user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         List<Integer> friendIds = user.getFriends().stream().map(f -> f.getFriendId()).collect(Collectors.toList());
 
-        return friendIds.stream()
-                .map(id -> userRepository.findById(id).orElse(null))
-                .filter(friend -> friend != null)
-                .flatMap(friend -> friend.getUserPosts().stream())
-                .filter(post -> post.getPublishTime().isAfter(LocalDateTime.now().minusWeeks(1)))
-                .sorted((p1, p2) -> p2.getPublishTime().compareTo(p1.getPublishTime()))
-                .collect(Collectors.toList());
+        return friendIds.stream().map(id -> {
+            UserModel friend = userRepository.findById(id).orElse(null);
+            if (friend == null) {
+                System.out.println("Friend not found for ID: " + id);
+            }
+            return friend;
+        }).filter(friend -> friend != null).flatMap(friend -> {
+            List<UserPost> posts = friend.getUserPosts();
+            return posts.stream();
+        }).sorted((p1, p2) -> p2.getPublishTime().compareTo(p1.getPublishTime())).collect(Collectors.toList());
     }
 
     public UserPost findPostById(Integer postId) {
@@ -69,7 +72,7 @@ public class PostService {
         savePost(post);
         System.out.println("After liking: " + post.getLikes().size());
     }
-    
+
     public void dislikePost(Integer userId, Integer postId) {
         UserPost post = findPostById(postId);
         System.out.println("Before disliking: " + post.getDislikes().size());
@@ -77,5 +80,5 @@ public class PostService {
         savePost(post);
         System.out.println("After disliking: " + post.getDislikes().size());
     }
-    
+
 }
