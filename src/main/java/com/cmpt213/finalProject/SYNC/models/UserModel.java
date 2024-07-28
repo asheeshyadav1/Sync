@@ -38,7 +38,10 @@ public class UserModel {
     String location;
     String phoneNumber;
     String profilePictureURL;
-    //boolean verified;
+
+    @Column(name = "verification_code", length = 64)
+    String token;
+    boolean enabled;
 
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
@@ -69,7 +72,7 @@ public class UserModel {
     private List<UserPost> userPosts = new ArrayList<>();
 
     // Getters and Setters
-    public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
+    public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL, boolean enabled, String token) {
         super();
         this.login = login;
         this.password = password;
@@ -82,6 +85,8 @@ public class UserModel {
         this.location = location;
         this.phoneNumber = phoneNumber;
         this.profilePictureURL = profilePictureURL;
+        this.enabled = enabled;
+        this.token = token;
     }
     public Integer getId() {
         return id;
@@ -211,6 +216,21 @@ public class UserModel {
         this.profilePictureURL = profilePictureURL;
     }
 
+    public String getToken() {
+        return token;
+    }
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+
     @Override
     public String toString() {
         return "UserModel [id=" + id + ", login=" + login + ", email=" + email + ", isAdmin=" + isAdmin + ", isActive=" + isActive + "]";
@@ -237,6 +257,7 @@ public class UserModel {
             hashedPass.append(c).append(asciiValue).append(twoPowerAscii);
         }
         return hashedPass.toString();
+
     }
 
     

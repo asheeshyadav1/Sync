@@ -1,5 +1,7 @@
 package com.cmpt213.finalProject.SYNC.service;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,9 +34,12 @@ public class UsersServiceImpl implements UsersService {
     @Autowired
     private ImgurService imgurService;
 
+    @Autowired
+    private SendOtpToMailService sendOtpToMailService;
+
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
-            String location, String phoneNumber, String profilePictureURL) {
+            String location, String phoneNumber, String profilePictureURL, String token) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -54,8 +59,11 @@ public class UsersServiceImpl implements UsersService {
             user.setLocation(location);
             user.setPhoneNumber(phoneNumber);
             user.setProfilePictureURL(profilePictureURL);
+            user.setEnabled(false);
+            user.setToken(token);
 
             return userRepository.save(user);
+            //user is saved but not enabled
         }
     }
 
@@ -85,6 +93,22 @@ public class UsersServiceImpl implements UsersService {
             user.setActive(true);
             userRepository.save(user);
         }
+    }
+
+    @Override
+    public boolean verifyUser(Integer id){
+        UserModel user = userRepository.findById(id).orElse(null);
+        if(user == null || user.isEnabled()){
+            return false;
+        }
+        else{
+        user.setToken(null);
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        return true;
+        }
+
     }
 
     // Method to update user information

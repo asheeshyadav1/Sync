@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.models.UserOTP;
 import com.cmpt213.finalProject.SYNC.repository.UserOTPRepository;
 
@@ -22,15 +23,12 @@ public class SendOtpToMailService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @Autowired
-    private UserOTPRepository userOTPRepository;
-
     @Value("${spring.mail.username}") private String sender;
     
-    public void sendOtpService(String email){
+    public void sendOtpService(String email, String siteURL, UserModel user){
         //send otp to email
         //String otp = generateotp();
-        String token = generateToken();
+        //String token = generateToken();
 
         // UserOTP userOTP = new UserOTP(email, otp);
         // userOTPRepository.save(userOTP);
@@ -42,11 +40,14 @@ public class SendOtpToMailService {
             mimeMessageHelper.setTo(email);
             mimeMessageHelper.setSubject("OTP");
 
-            String verificationLink = "http://localhost:8080/login" + token;
+            //String verificationLink = "http://localhost:8080/login" + token;
             String emailContent = "<p>welcome to SYNC!</p>"
                 + "<p>Please verify your email address by clicking the link below:</p>"
-                + "<p><a href=\"" + verificationLink + "\">Verify Email</a></p>"
+                + "<p><a href=\"[[URL]]\">Verify Email</a></p>"
                 + "<p>Thank you!</p>";
+
+            String verificationLink = siteURL + "/verify?code=" + user.getToken();
+            emailContent = emailContent.replace("[[URL]]", verificationLink);
             mimeMessageHelper.setText(emailContent, true);
             //mimeMessageHelper.setText("Your OTP is " + otp);
             javaMailSender.send(mimeMessage);
@@ -62,12 +63,12 @@ public class SendOtpToMailService {
         return Base64.getUrlEncoder().encodeToString(bytes);
     }
     
-    private String generateotp(){
-        //generate otp
-        SecureRandom random = new SecureRandom();
-        int otp = 100000 + random.nextInt(900000);
-        return String.valueOf(otp);
-    }
+    // private String generateotp(){
+    //     //generate otp
+    //     SecureRandom random = new SecureRandom();
+    //     int otp = 100000 + random.nextInt(900000);
+    //     return String.valueOf(otp);
+    // }
 
     // private void sendOtpToMail(String email, String otp) throws MessagingException {
     //     MimeMessage mimeMessage = javaMailSender.createMimeMessage();
@@ -79,16 +80,16 @@ public class SendOtpToMailService {
     //     javaMailSender.send(mimeMessage);
     // }
 
-    public boolean verifyOTP(String email, String otp) {
-        //return sentCode.equals(userEnteredCode);
-        Optional<UserOTP> userOTPOptional = userOTPRepository.findByEmail(email);
-        if(userOTPOptional.isPresent()){
-            UserOTP userOTP = userOTPOptional.get();
-            if(userOTP.getOtp().equals(otp)){
-                userOTPRepository.delete(userOTP);
-                return true;
-                }
-        }
-        return false;
-    }
+    // public boolean verifyOTP(String email, String otp) {
+    //     //return sentCode.equals(userEnteredCode);
+    //     Optional<UserOTP> userOTPOptional = userOTPRepository.findByEmail(email);
+    //     if(userOTPOptional.isPresent()){
+    //         UserOTP userOTP = userOTPOptional.get();
+    //         if(userOTP.getOtp().equals(otp)){
+    //             userOTPRepository.delete(userOTP);
+    //             return true;
+    //             }
+    //     }
+    //     return false;
+    // }
 }

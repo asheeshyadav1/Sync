@@ -86,23 +86,26 @@ public class UsersController {
         userModel.setLocation("not-given");
         userModel.setPhoneNumber("");
         userModel.setProfilePictureURL("");
+        String token = sendOtpToMailService.generateToken();
+        userModel.setToken("");
 
-       
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
-                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL());
+                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(), userModel.getToken());
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
             return "error_page";
         }
         System.out.println("Sending OTP to " + userModel.getEmail());
-        sendOtpToMailService.sendOtpService(userModel.getEmail());
+        String siteURL="";
+        sendOtpToMailService.sendOtpService(userModel.getEmail(), siteURL ,userModel);
         
         model.addAttribute("userLogin", userModel.getLogin());
+        //if user has been enabled then you can start a session
         request.getSession().setAttribute("session_user", userModel);
-        return "redirect:/confirm_verification.html";
+        return "register_success";
     }
 
     @PostMapping("/login")
@@ -452,28 +455,33 @@ public class UsersController {
         return "showAll";
     }
 
-    @PostMapping("/sendOTP/{email}")
-    public String sendOtpToMail(@PathVariable("email") String email) {
-        System.out.println("Sending OTP to " + email);
-        sendOtpToMailService.sendOtpService(email);
-        return "redirect:/verification";
-    }
+    // @PostMapping("/sendOTP/{email}")
+    // public String sendOtpToMail(@PathVariable("email") String email) {
+    //     System.out.println("Sending OTP to " + email);
+    //     sendOtpToMailService.sendOtpService(email);
+    //     return "redirect:/verification";
+    // }
     
     @GetMapping("/verification")
     public String twoStepVerification(Model model) {
         return "verification";
     }
 
-    @PostMapping("/verification/{email}")
-    public String verifyOTP(@RequestParam("OTP") String enteredOTP, @RequestParam("email") String email) {
-        System.out.println("Verifying OTP for " + email);
-        boolean isVerified = sendOtpToMailService.verifyOTP(email, enteredOTP);
-        if (isVerified) {
-            return "redirect:/intro";
-        } else {
-            return "redirect:/verification";
-            }
-    }
+    // @PostMapping("/verification/{email}")
+    // public String verifyOTP(@RequestParam("OTP") String enteredOTP, @RequestParam("email") String email) {
+    //     System.out.println("Verifying OTP for " + email);
+    //     boolean isVerified = sendOtpToMailService.verifyOTP(email, enteredOTP);
+    //     if (isVerified) {
+    //         return "redirect:/intro";
+    //     } else {
+    //         return "redirect:/verification";
+    //         }
+    // }
+
+    private String getSiteURL(HttpServletRequest request) {
+        String siteURL = request.getRequestURL().toString();
+        return siteURL.replace(request.getServletPath(), "");
+    } 
     
     
     
