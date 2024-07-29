@@ -78,16 +78,20 @@ public class UsersController {
             model.addAttribute("user", new UserModel());
 
             // Set headers to prevent caching
-            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
-            response.setHeader("Pragma", "no-cache"); // HTTP 1.0
-            response.setDateHeader("Expires", 0); // Proxies
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
 
             return "login_page";
         } else {
             model.addAttribute("userLogin", user.getLogin());
-            postService.getRecentFriendPosts(user.getId());
-            System.out.println("\n\n\n\n" + postService.getRecentFriendPosts(user.getId()) + "\n\n\n\n");
-            model.addAttribute("posts", user.getLogin());
+            model.addAttribute("user", user);
+
+            Set<UserPost> uniquePosts = new TreeSet<>(Comparator.comparing(UserPost::getPublishTime).reversed());
+            uniquePosts.addAll(postService.getRecentFriendPosts(user.getId()));
+
+            List<UserPost> sortedPosts = new ArrayList<>(uniquePosts);
+            model.addAttribute("posts", sortedPosts);
 
             // Set a cookie with the session token
             Cookie sessionCookie = new Cookie("session", session.getId());
@@ -140,18 +144,8 @@ public class UsersController {
 
         if (authenticate != null) {
             if (authenticate.isActive()) {
-                model.addAttribute("userLogin", authenticate.getLogin());
-                request.getSession().setAttribute("session_user", authenticate); // Store authenticated user with ID
-
-                // Use a TreeSet to automatically sort posts and avoid duplicates
-                Set<UserPost> uniquePosts = new TreeSet<>(Comparator.comparing(UserPost::getPublishTime).reversed());
-                uniquePosts.addAll(postService.getRecentFriendPosts(authenticate.getId()));
-
-                // Convert back to list if necessary
-                List<UserPost> sortedPosts = new ArrayList<>(uniquePosts);
-                model.addAttribute("posts", sortedPosts);
-
-                return "personalAccount";
+                request.getSession().setAttribute("session_user", authenticate); 
+                return "redirect:/login";
             } else {
                 model.addAttribute("error", "You have been deactivated. Please contact admin!");
                 return "login_page";
@@ -635,7 +629,6 @@ public class UsersController {
             return "redirect:/login";
         }
 
-        // Assuming you have a method to retrieve all friends
         List<UserFriendKey> friends = user.getFriends();
 
         // Use a HashSet to avoid duplicate friend logins
