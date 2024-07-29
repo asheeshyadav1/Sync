@@ -49,7 +49,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand" href="/login">
                 <img src="/logo/logo.png" alt="Sync Logo" style="height: 100px;">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -66,7 +66,8 @@
                     </li>
                     <li class="nav-item ms-3">
                         <a class="nav-link" href="#">
-                            <img src="/logo/profile logo.png" alt="Profile Picture" class="rounded-circle" width="40" height="40">
+                            <img th:src="${user.profilePictureURL != null && !user.profilePictureURL.isEmpty() ? user.profilePictureURL : '/logo/profile logo.png'}"
+                                 id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
                         </a>
                     </li>
                 </ul>

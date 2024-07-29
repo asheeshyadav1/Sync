@@ -1,11 +1,16 @@
 package com.cmpt213.finalProject.SYNC.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +36,6 @@ import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
-
-
-
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,7 +46,6 @@ public class UsersController {
 
     @Autowired
     private UserRepository userRepository;
-    
 
     @Autowired
     private UsersService userService;
@@ -52,16 +53,11 @@ public class UsersController {
     @Autowired
     private PostService postService;
 
-     @Autowired
+    @Autowired
     private ImgurService imgurService;
 
     @Autowired
-    private UserRepo userRepoMaps; 
-
-    
-    
-
-    
+    private UserRepo userRepoMaps;
 
     @GetMapping("/")
     public String getHomePage() {
@@ -75,29 +71,37 @@ public class UsersController {
     }
 
     @GetMapping("/login")
-public String getLoginPage(Model model, HttpServletRequest request, HttpSession session, HttpServletResponse response) {
-    UserModel user = (UserModel) session.getAttribute("session_user");
-    if (user == null) {
-        model.addAttribute("user", new UserModel());
-        
-        // Set headers to prevent caching
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
-        response.setHeader("Pragma", "no-cache"); // HTTP 1.0
-        response.setDateHeader("Expires", 0); // Proxies
+    public String getLoginPage(Model model, HttpServletRequest request, HttpSession session,
+            HttpServletResponse response) {
+        UserModel user = (UserModel) session.getAttribute("session_user");
+        if (user == null) {
+            model.addAttribute("user", new UserModel());
 
-        return "login_page";
-    } else {
-        model.addAttribute("userLogin", user.getLogin());
-        
-        // Set a cookie with the session token
-        Cookie sessionCookie = new Cookie("session", session.getId());
-        sessionCookie.setHttpOnly(true);
-        sessionCookie.setPath("/");
-        response.addCookie(sessionCookie);
+            // Set headers to prevent caching
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
 
-        return "personalAccount";
+            return "login_page";
+        } else {
+            model.addAttribute("userLogin", user.getLogin());
+            model.addAttribute("user", user);
+
+            Set<UserPost> uniquePosts = new TreeSet<>(Comparator.comparing(UserPost::getPublishTime).reversed());
+            uniquePosts.addAll(postService.getRecentFriendPosts(user.getId()));
+
+            List<UserPost> sortedPosts = new ArrayList<>(uniquePosts);
+            model.addAttribute("posts", sortedPosts);
+
+            // Set a cookie with the session token
+            Cookie sessionCookie = new Cookie("session", session.getId());
+            sessionCookie.setHttpOnly(true);
+            sessionCookie.setPath("/");
+            response.addCookie(sessionCookie);
+
+            return "personalAccount";
+        }
     }
-}
 
     @PostMapping("/register")
     public String registerUser(@ModelAttribute UserModel userModel, Model model, HttpServletRequest request,
@@ -115,11 +119,11 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         userModel.setProfilePictureURL("");
         userModel.setLongitude(0.0);
         userModel.setLatitude(0.0);
-       
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
-                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(), userModel.getLatitude(), userModel.getLongitude());
+                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(),
+                userModel.getLatitude(), userModel.getLongitude());
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
@@ -134,16 +138,14 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
     @PostMapping("/login")
     public String loginUser(@ModelAttribute UserModel userModel, Model model, HttpServletRequest request,
             HttpSession session) {
-        System.out.println("login request: " + userModel);
         String hashedPassword = UserModel.hashFunc(userModel.getPassword());
         userModel.setPassword(hashedPassword);
         UserModel authenticate = userService.authentication(userModel.getLogin(), userModel.getPassword());
 
         if (authenticate != null) {
             if (authenticate.isActive()) {
-                model.addAttribute("userLogin", authenticate.getLogin());
-                request.getSession().setAttribute("session_user", authenticate); // Store authenticated user with ID
-                return "personalAccount";
+                request.getSession().setAttribute("session_user", authenticate); 
+                return "redirect:/login";
             } else {
                 model.addAttribute("error", "You have been deactivated. Please contact admin!");
                 return "login_page";
@@ -168,7 +170,6 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
     @PostMapping("/adminlogin")
     public String adminLogin(@ModelAttribute UserModel userModel, Model model, HttpServletRequest request,
             HttpSession session) {
-        System.out.println("admin login request: " + userModel);
 
         String hashedPassword = UserModel.hashFunc(userModel.getPassword());
         userModel.setPassword(hashedPassword);
@@ -221,18 +222,18 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         if (session != null) {
             session.invalidate();
         }
-    
+
         // Clear the session cookie
         Cookie sessionCookie = new Cookie("session", null);
         sessionCookie.setPath("/*");
         sessionCookie.setMaxAge(0);
         response.addCookie(sessionCookie);
-    
+
         // Set headers to prevent caching
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
         response.setHeader("Pragma", "no-cache"); // HTTP 1.0
         response.setDateHeader("Expires", 0); // Proxies
-    
+
         return "redirect:/login";
     }
 
@@ -259,7 +260,12 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         if (sessionUser == null) {
             return List.of();
         }
-        return userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
+
+        // Fetch the users from the service
+        List<UserModel> users = userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
+
+        // Limit the number of users to 10
+        return users.stream().limit(10).collect(Collectors.toList());
     }
 
     @GetMapping("/userEditAccount")
@@ -280,7 +286,7 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         return "editUser";
     }
 
-     @GetMapping("/seeProfile")
+    @GetMapping("/seeProfile")
     public String seeProfile(Model model, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
@@ -302,9 +308,10 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         return "viewProfile";
     }
 
-
     @PostMapping("/editUser")
-    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session ,@RequestParam("profilePictureFile") MultipartFile profilePictureFile, @RequestParam("resetProfilePicture") boolean resetProfilePicture) throws IOException {
+    public String editUser(@ModelAttribute UserModel userModel, Model model, HttpSession session,
+            @RequestParam("profilePictureFile") MultipartFile profilePictureFile,
+            @RequestParam("resetProfilePicture") boolean resetProfilePicture) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -313,7 +320,8 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         System.out.println(userModel.getGender());
 
         UserModel updatedUser = userService.updateUser(sessionUser.getLogin(), userModel.getDob(),
-                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation(), userModel.getLatitude(), userModel.getLongitude());
+                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation(), userModel.getLatitude(),
+                userModel.getLongitude());
 
         if (updatedUser == null) {
             model.addAttribute("error", "Failed to update user information.");
@@ -325,11 +333,11 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
             updatedUser.setProfilePictureURL(defaultProfilePictureURL);
             userService.saveUser(updatedUser);
         }
-        
-        else{
-        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
-            String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
-            updatedUser.setProfilePictureURL(profilePictureURL);
+
+        else {
+            if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+                String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
+                updatedUser.setProfilePictureURL(profilePictureURL);
             }
         }
 
@@ -344,8 +352,9 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         return "viewProfile";
     }
 
-     @PostMapping("/intro")
-    public String getAdditionalInfo(@ModelAttribute UserModel userModel, Model model, HttpSession session, @RequestParam("profilePictureFile") MultipartFile profilePictureFile) throws IOException {
+    @PostMapping("/intro")
+    public String getAdditionalInfo(@ModelAttribute UserModel userModel, Model model, HttpSession session,
+            @RequestParam("profilePictureFile") MultipartFile profilePictureFile) throws IOException {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
         if (sessionUser == null) {
@@ -354,15 +363,15 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         }
 
         UserModel updatedUser = userService.updateUser(sessionUser.getLogin(), userModel.getDob(),
-                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation(), userModel.getLatitude(), userModel.getLongitude());
+                userModel.getGender(), userModel.getPhoneNumber(), userModel.getLocation(), userModel.getLatitude(),
+                userModel.getLongitude());
 
         if (updatedUser == null) {
             model.addAttribute("error", "Failed to update user information.");
             return "introPage";
         }
 
-        if(profilePictureFile.isEmpty())
-        {
+        if (profilePictureFile.isEmpty()) {
             String defaultProfilePictureURL = "/logo/profile logo.png"; // Default profile picture path
             updatedUser.setProfilePictureURL(defaultProfilePictureURL);
             userService.saveUser(updatedUser);
@@ -371,7 +380,7 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
             String profilePictureURL = userService.updateProfilePicture(updatedUser.getLogin(), profilePictureFile);
             updatedUser.setProfilePictureURL(profilePictureURL);
-            }
+        }
 
         userRepository.save(updatedUser);
 
@@ -426,14 +435,16 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         UserModel requser = userService.findByIdWithFriendRequests(id.longValue());
 
         boolean requestSent = userService.sendFriendRequest(id, sessionUser);
-        // boolean reqUser = userService.sendFriendRequest(sessionUser.getId(), requser);
+        // boolean reqUser = userService.sendFriendRequest(sessionUser.getId(),
+        // requser);
 
         Map<String, String> response = new HashMap<>();
         if (requestSent) {
             response.put("status", "Request Sent");
         } else {
             boolean requestDeleted = userService.deleteFriendRequest(sessionUser.getId(), id);
-            // boolean reqdeleted = userService.deleteFriendRequest(id, sessionUser.getId());
+            // boolean reqdeleted = userService.deleteFriendRequest(id,
+            // sessionUser.getId());
             if (requestDeleted) {
                 response.put("status", "Request Deleted");
             } else {
@@ -480,174 +491,167 @@ public String getLoginPage(Model model, HttpServletRequest request, HttpSession 
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
         return userService.findGotFriendRequests(sessionUser);
     }
-    
+
     @GetMapping("/users/view")
-    public String getAllUsers(Model model){
+    public String getAllUsers(Model model) {
         System.out.println("Getting all users");
-        
+
         List<UserModel> users = userRepository.findAll();
         // end of database call
         model.addAttribute("us", users);
         return "showAll";
     }
 
-  
     // @GetMapping("/maps")
     // public String getMaps(Model model) {
-    //     Map<String, String> friendLocation = new HashMap<>();
-    //     friendLocation.put("location", "New York");
-    //     model.addAttribute("friendLocation", friendLocation);
-    //     return "Maps";
+    // Map<String, String> friendLocation = new HashMap<>();
+    // friendLocation.put("location", "New York");
+    // model.addAttribute("friendLocation", friendLocation);
+    // return "Maps";
     // }
 
     @GetMapping("/getLocation")
     public String getLocation(Model model, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-    
+
         if (sessionUser == null) {
             return "redirect:/login";
         }
-    
+
         UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
         if (user == null) {
             return "redirect:/login";
         }
-         
+
         // Assuming you have a method to retrieve all friends
-        List<UserFriendKey> friends = user.getFriends(); 
-    
+        List<UserFriendKey> friends = user.getFriends();
+
         // Extract friends' locations
-        List<Map<String, Object>> friendsLocations = friends.stream()
-            .map(friend -> {
-                UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
-                if (friendUser != null) {
-                    Map<String, Object> locationData = new HashMap<>();
-                    locationData.put("login", friendUser.getLogin());
-                    locationData.put("location", friendUser.getLocation());
-                    locationData.put("latitude", friendUser.getLatitude());
-                    locationData.put("longitude", friendUser.getLongitude());
-                    return locationData;
-                }
-                return null;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-    
+        List<Map<String, Object>> friendsLocations = friends.stream().map(friend -> {
+            UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
+            if (friendUser != null) {
+                Map<String, Object> locationData = new HashMap<>();
+                locationData.put("login", friendUser.getLogin());
+                locationData.put("location", friendUser.getLocation());
+                locationData.put("latitude", friendUser.getLatitude());
+                locationData.put("longitude", friendUser.getLongitude());
+                return locationData;
+            }
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
         model.addAttribute("user", user);
         model.addAttribute("friends", friends);
         model.addAttribute("friendsLocations", friendsLocations);
-        
 
-    
         return "Maps";
     }
 
     // @GetMapping("/friends")
     // public String getFriends(Model model, HttpSession session) {
-    //     UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-    
-    //     if (sessionUser == null) {
-    //         return "redirect:/login";
-    //     }
-    
-    //     UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
-    //     if (user == null) {
-    //         return "redirect:/login";
-    //     }
+    // UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
-    //     // Assuming you have a method to retrieve all friends
-    //     List<UserFriendKey> friends = user.getFriends();
-
-        
-    //     // Extract friends' locations
-    //     List<Map<String, Object>> friendMessages = friends.stream()
-    //         .map(friend -> {
-    //             UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
-    //             if (friendUser != null) {
-    //                 Map<String, Object> friendsmessage = new HashMap<>();
-    //                 friendsmessage.put("login", friendUser.getLogin());
-    //                 friendsmessage.put("Id", friendUser.getId());
-    //                 return friendsmessage;
-    //             }
-    //             return null;
-    //         })
-    //         .filter(Objects::nonNull)
-    //         .collect(Collectors.toList());
-
-    //     model.addAttribute("user", user);
-    //     model.addAttribute("friends", friends);
-    //     model.addAttribute("friendMessages", friendMessages);
-       
-    //     return "friends"; // Return the name of the view template
+    // if (sessionUser == null) {
+    // return "redirect:/login";
     // }
-    
+
+    // UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+    // if (user == null) {
+    // return "redirect:/login";
+    // }
+
+    // // Assuming you have a method to retrieve all friends
+    // List<UserFriendKey> friends = user.getFriends();
+
+    // // Extract friends' locations
+    // List<Map<String, Object>> friendMessages = friends.stream()
+    // .map(friend -> {
+    // UserModel friendUser =
+    // userRepository.findById(friend.getFriendId()).orElse(null);
+    // if (friendUser != null) {
+    // Map<String, Object> friendsmessage = new HashMap<>();
+    // friendsmessage.put("login", friendUser.getLogin());
+    // friendsmessage.put("Id", friendUser.getId());
+    // return friendsmessage;
+    // }
+    // return null;
+    // })
+    // .filter(Objects::nonNull)
+    // .collect(Collectors.toList());
+
+    // model.addAttribute("user", user);
+    // model.addAttribute("friends", friends);
+    // model.addAttribute("friendMessages", friendMessages);
+
+    // return "friends"; // Return the name of the view template
+    // }
+
     // @PostMapping("/sendMessage")
-    // public String sendMessage(Model model, HttpSession session, @RequestParam Integer receiverId, @RequestParam String content) {
-    //     UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-    
-    //     if (sessionUser == null) {
-    //         return "redirect:/login";
-    //     }
-    
-    //     UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
-    //     if (user == null) {
-    //         return "redirect:/login";
-    //     }
-    
-    //     List<UserModel> receiver_all = userRepository.findByFriendsUserId(receiverId);
+    // public String sendMessage(Model model, HttpSession session, @RequestParam
+    // Integer receiverId, @RequestParam String content) {
+    // UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
-    //     UserModel receiver = receiver_all.get(0);
-    
-    //     if (receiver != null) {
-    //         chatMessageService.sendMessage(user, receiver, content);
-    //     } else {
-    //         // Handle the case where the receiver is not found
-    //         model.addAttribute("error", "Receiver not found");
-    //         return "errorPage"; // Redirect to an error page or handle accordingly
-    //     }
-    
-    //     return "redirect:/directMessaging"; // Redirect to the direct messaging page
+    // if (sessionUser == null) {
+    // return "redirect:/login";
     // }
+
+    // UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+    // if (user == null) {
+    // return "redirect:/login";
+    // }
+
+    // List<UserModel> receiver_all =
+    // userRepository.findByFriendsUserId(receiverId);
+
+    // UserModel receiver = receiver_all.get(0);
+
+    // if (receiver != null) {
+    // chatMessageService.sendMessage(user, receiver, content);
+    // } else {
+    // // Handle the case where the receiver is not found
+    // model.addAttribute("error", "Receiver not found");
+    // return "errorPage"; // Redirect to an error page or handle accordingly
+    // }
+
+    // return "redirect:/directMessaging"; // Redirect to the direct messaging page
+    // }
+
     @GetMapping("/Dm")
-public String getFriends(Model model, HttpSession session) {
-    UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+    public String getFriends(Model model, HttpSession session) {
+        UserModel sessionUser = (UserModel) session.getAttribute("session_user");
 
-    if (sessionUser == null) {
-        return "redirect:/login";
-    }
+        if (sessionUser == null) {
+            return "redirect:/login";
+        }
 
-    UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
-    if (user == null) {
-        return "redirect:/login";
-    }
+        UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
+        if (user == null) {
+            return "redirect:/login";
+        }
 
-    // Assuming you have a method to retrieve all friends
-    List<UserFriendKey> friends = user.getFriends();
+        List<UserFriendKey> friends = user.getFriends();
 
-    // Extract friends' ID and their messages
-    List<Map<String, Object>> friendMessages = friends.stream()
-        .map(friend -> {
+        // Use a HashSet to avoid duplicate friend logins
+        Set<Map<String, Object>> friendMessages = new HashSet<>();
+
+        friends.forEach(friend -> {
             UserModel friendUser = userRepository.findById(friend.getFriendId()).orElse(null);
             if (friendUser != null) {
-                Map<String, Object> friendsmessage = new HashMap<>();
-                friendsmessage.put("login", friendUser.getLogin());
+                Map<String, Object> friendsMessage = new HashMap<>();
+                friendsMessage.put("login", friendUser.getLogin());
+                friendsMessage.put("id", friendUser.getId());
 
-               
-
-                return friendsmessage;
+                // Add to the set to ensure uniqueness
+                friendMessages.add(friendsMessage);
             }
-            return null;
-        })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        });
 
-    model.addAttribute("user", user);
-    model.addAttribute("friends", friends);
-    model.addAttribute("friendMessages", friendMessages);
-    
+        System.out.println("\n\n\n\n" + friendMessages + "\n\n\n\n");
 
-    return "message"; // Return the name of the view template
-}
+        model.addAttribute("user", user);
+        model.addAttribute("friendMessages", friendMessages);
 
+        return "message"; // Return the name of the view template
+    }
 
 }

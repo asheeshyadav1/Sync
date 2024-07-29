@@ -2,20 +2,7 @@ package com.cmpt213.finalProject.SYNC.models;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.AttributeOverrides;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users_table")
@@ -27,7 +14,7 @@ public class UserModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
-    String login; // username
+    String login;
     String password;
     String email;
     String name;
@@ -45,7 +32,7 @@ public class UserModel {
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
     @AttributeOverrides({
         @AttributeOverride(name = "userId", column = @Column(name = "user_id", insertable = false, updatable = false)),
-        @AttributeOverride(name = "friendId", column = @Column(name = "friend_id")),
+        @AttributeOverride(name = "friendId", column = @Column(name = "friend_id"))
     })
     List<UserFriendKey> friends = new ArrayList<>();
 
@@ -68,14 +55,13 @@ public class UserModel {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<UserPost> userPosts = new ArrayList<>();
-    // @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
-    // private List<ChatMessage> sentMessages = new ArrayList<>();
-    // @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
-    // private List<ChatMessage> receivedMessages = new ArrayList<>();
 
-    
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChatMessage> sentMessages = new ArrayList<>();
 
-    // Getters and Setters
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChatMessage> receivedMessages = new ArrayList<>();
+
     public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
         this.login = login;
         this.password = password;
@@ -83,12 +69,14 @@ public class UserModel {
         this.name = name;
         this.isAdmin = isAdmin;
         this.isActive = isActive;
-        this.gender = gender; 
+        this.gender = gender;
         this.dob = dob;
         this.location = location;
         this.phoneNumber = phoneNumber;
         this.profilePictureURL = profilePictureURL;
     }
+
+    // Getters and Setters
     public Integer getId() {
         return id;
     }
@@ -183,7 +171,6 @@ public class UserModel {
 
     public void setFriends(List<UserFriendKey> friends) {
         this.friends = friends;
-        
     }
 
     public List<UserFriendRequestKey> getFriendRequests() {
@@ -210,8 +197,6 @@ public class UserModel {
         this.userPosts = userPosts;
     }
 
-    
-
     public String getProfilePictureURL() {
         return profilePictureURL;
     }
@@ -220,45 +205,44 @@ public class UserModel {
         this.profilePictureURL = profilePictureURL;
     }
 
-
     public Double getLatitude() {
         return latitude;
     }
+
     public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
+
     public Double getLongitude() {
         return longitude;
     }
+
     public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 
-    // public List<ChatMessage> getSentMessages() {
-    //     return sentMessages;
-    // }
+    public List<ChatMessage> getSentMessages() {
+        return sentMessages;
+    }
 
-    // public void setSentMessages(List<ChatMessage> sentMessages) {
-    //     this.sentMessages = sentMessages;
-    // }
+    public void setSentMessages(List<ChatMessage> sentMessages) {
+        this.sentMessages = sentMessages;
+    }
 
-    // public List<ChatMessage> getReceivedMessages() {
-    //     return receivedMessages;
-    // }
+    public List<ChatMessage> getReceivedMessages() {
+        return receivedMessages;
+    }
 
-    // public void setReceivedMessages(List<ChatMessage> receivedMessages) {
-    //     this.receivedMessages = receivedMessages;
-    // }
-    
+    public void setReceivedMessages(List<ChatMessage> receivedMessages) {
+        this.receivedMessages = receivedMessages;
+    }
 
     @Override
     public String toString() {
         return "UserModel [id=" + id + ", login=" + login + ", email=" + email + ", isAdmin=" + isAdmin + ", isActive=" + isActive + "]";
     }
 
-
     public static String hashFunc(String password) {
-        // Step 1: Mirror the password
         char[] chars = password.toCharArray();
         int length = chars.length;
         for (int i = 0; i < length / 2; i++) {
@@ -268,13 +252,11 @@ public class UserModel {
         }
         String mirroredPassword = new String(chars);
 
-        // Step 2: Process each character of the mirrored password
         StringBuilder hashedPass = new StringBuilder();
         for (int i = 0; i < mirroredPassword.length(); i++) {
             char c = mirroredPassword.charAt(i);
             int asciiValue = (int) c;
             long twoPowerAscii = (long) Math.pow(2, asciiValue);
-            // Step 3 & 4: Concatenate character, its ASCII value, and 2^ASCII value as strings
             hashedPass.append(c).append(asciiValue).append(twoPowerAscii);
         }
         return hashedPass.toString();
