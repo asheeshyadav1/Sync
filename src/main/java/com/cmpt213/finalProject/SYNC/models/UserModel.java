@@ -38,10 +38,9 @@ public class UserModel {
     String location;
     String phoneNumber;
     String profilePictureURL;
-
-    @Column(name = "verification_code", length = 64)
     String token;
     boolean enabled;
+   
 
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))

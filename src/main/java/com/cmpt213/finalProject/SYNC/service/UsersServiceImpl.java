@@ -39,7 +39,7 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
-            String location, String phoneNumber, String profilePictureURL, String token) {
+            String location, String phoneNumber, String profilePictureURL, String siteURL) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -60,7 +60,11 @@ public class UsersServiceImpl implements UsersService {
             user.setPhoneNumber(phoneNumber);
             user.setProfilePictureURL(profilePictureURL);
             user.setEnabled(false);
+
+            String token = sendOtpToMailService.generateToken();
             user.setToken(token);
+
+            sendOtpToMailService.sendOtpService(email, siteURL, user);
 
             return userRepository.save(user);
             //user is saved but not enabled
@@ -96,8 +100,8 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Override
-    public boolean verifyUser(Integer id){
-        UserModel user = userRepository.findById(id).orElse(null);
+    public boolean verifyUser(String token){
+        UserModel user = userRepository.findByToken(token).orElse(null);
         if(user == null || user.isEnabled()){
             return false;
         }

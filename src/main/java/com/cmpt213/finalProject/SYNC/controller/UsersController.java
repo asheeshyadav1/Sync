@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -87,25 +88,49 @@ public class UsersController {
         userModel.setPhoneNumber("");
         userModel.setProfilePictureURL("");
         String token = sendOtpToMailService.generateToken();
-        userModel.setToken("");
+        userModel.setToken(token);
 
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
-                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(), userModel.getToken());
+                userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(), getSiteURL(request));
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
             return "error_page";
         }
-        System.out.println("Sending OTP to " + userModel.getEmail());
-        String siteURL="";
-        sendOtpToMailService.sendOtpService(userModel.getEmail(), siteURL ,userModel);
+        // System.out.println("Sending OTP to " + userModel.getEmail());
+        // String siteURL="";
+        // sendOtpToMailService.sendOtpService(userModel.getEmail(), siteURL ,userModel);
         
         model.addAttribute("userLogin", userModel.getLogin());
         //if user has been enabled then you can start a session
+        System.out.println("register done: ");
         request.getSession().setAttribute("session_user", userModel);
-        return "register_success";
+        System.out.println("session done: ");
+        return "redirect:/register_success";
+    }
+
+    // @GetMapping("/register_success")
+    // public String register_success(Model model) {
+    //     return "register_success";
+    // }
+    @GetMapping("/register_success")
+    public String registerSuccess() {
+        return "register_success"; 
+    }
+    @GetMapping("/verify")
+    public String verifyUser(@Param("code") String code, Model model) {
+        Optional<UserModel> user = userRepository.findByToken(code);
+        if (user != null) {
+            // Add the user to the model if verification is successful
+            model.addAttribute("user", user);
+            return "verify_success";
+        } else {
+            // Handle failed verification
+            System.out.println("user not found");
+            return "verify_fail";
+        }
     }
 
     @PostMapping("/login")
@@ -118,9 +143,15 @@ public class UsersController {
 
         if (authenticate != null) {
             if (authenticate.isActive()) {
+                if(authenticate.isEnabled()){
                 model.addAttribute("userLogin", authenticate.getLogin());
                 request.getSession().setAttribute("session_user", authenticate); // Store authenticated user with ID
                 return "personalAccount";
+                }
+                else{
+                    model.addAttribute("error", "your account has not been verified, check your email to verify your account");
+                    return "verify_fail";
+                }
             } else {
                 model.addAttribute("error", "You have been deactivated. Please contact admin!");
                 return "login_page";

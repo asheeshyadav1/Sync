@@ -2,7 +2,6 @@ package com.cmpt213.finalProject.SYNC.service;
 
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,8 +10,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.cmpt213.finalProject.SYNC.models.UserModel;
-import com.cmpt213.finalProject.SYNC.models.UserOTP;
-import com.cmpt213.finalProject.SYNC.repository.UserOTPRepository;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -38,7 +35,7 @@ public class SendOtpToMailService {
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
             mimeMessageHelper.setFrom(sender);
             mimeMessageHelper.setTo(email);
-            mimeMessageHelper.setSubject("OTP");
+            mimeMessageHelper.setSubject("Verify your Sync account");
 
             //String verificationLink = "http://localhost:8080/login" + token;
             String emailContent = "<p>welcome to SYNC!</p>"

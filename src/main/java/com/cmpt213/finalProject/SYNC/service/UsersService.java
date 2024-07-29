@@ -10,12 +10,12 @@ import com.cmpt213.finalProject.SYNC.models.UserModel;
 
 @Service
 public interface UsersService {
-    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL, String token);
+    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL, String siteURL);
     UserModel authentication(String login, String password);
     List<UserModel> getAllUsers();
     void deactivateUser(Integer id);
     void activateUser(Integer id);
-    public boolean verifyUser(Integer id);
+    public boolean verifyUser(String token);
     UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location);
     public String updateProfilePicture(String login, MultipartFile image);
     public void saveUser(UserModel user);
