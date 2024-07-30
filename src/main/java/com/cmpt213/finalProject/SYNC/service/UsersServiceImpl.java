@@ -1,6 +1,5 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,8 +18,6 @@ import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
-
-
 @Service
 public class UsersServiceImpl implements UsersService {
 
@@ -32,9 +29,6 @@ public class UsersServiceImpl implements UsersService {
 
     @Autowired
     private ImgurService imgurService;
-
-    
-   
 
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
@@ -94,7 +88,8 @@ public class UsersServiceImpl implements UsersService {
     }
 
     // Method to update user information
-    public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location, Double latitude, Double longitude) {
+    public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location,
+            Double latitude, Double longitude) {
         Optional<UserModel> optionalUser = userRepository.findByLogin(login);
 
         System.out.println(login);
@@ -114,9 +109,10 @@ public class UsersServiceImpl implements UsersService {
         }
         return null; // Handle case where user is not found
     }
+
     public String updateProfilePicture(String login, MultipartFile image) {
         UserModel user = userRepository.findByLogin(login).orElseThrow(() -> new RuntimeException("User not found"));
-        String ppURL= imgurService.uploadImage(image);
+        String ppURL = imgurService.uploadImage(image);
         if (user != null) {
             // Update the user's profile picture URL
             user.setProfilePictureURL(ppURL);
@@ -133,10 +129,9 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserFriendKey> getAllFriends(UserModel sessionUser){
+    public List<UserFriendKey> getAllFriends(UserModel sessionUser) {
         return sessionUser.getFriends();
     }
-  
 
     public void deleteUserById(Integer userId) {
         userRepository.deleteById(userId);
@@ -146,9 +141,8 @@ public class UsersServiceImpl implements UsersService {
     public void deleteUserByIdAndRemoveFromFriends(Integer userId) {
         UserModel userToDelete = userRepository.findById(userId).orElse(null);
         if (userToDelete != null) {
-            List<UserFriendKey> friends = userToDelete.getFriends();
-
-            for (UserFriendKey friendKey : friends) {
+            // Remove the user from their friends' lists
+            for (UserFriendKey friendKey : userToDelete.getFriends()) {
                 UserModel friend = userRepository.findById(friendKey.getFriendId()).orElse(null);
                 if (friend != null) {
                     friend.getFriends().removeIf(fk -> fk.getFriendId().equals(userId));
@@ -156,6 +150,25 @@ public class UsersServiceImpl implements UsersService {
                 }
             }
 
+            // Remove any friend requests sent by the user
+            for (UserFriendRequestKey requestKey : userToDelete.getFriendRequests()) {
+                UserModel requestedUser = userRepository.findById(requestKey.getFriendRequestId()).orElse(null);
+                if (requestedUser != null) {
+                    requestedUser.getGotFriendRequests().removeIf(gfrk -> gfrk.getUserId().equals(userId));
+                    userRepository.save(requestedUser);
+                }
+            }
+
+            // Remove any friend requests received by the user
+            for (UserFriendRequestKey gotRequestKey : userToDelete.getGotFriendRequests()) {
+                UserModel requestingUser = userRepository.findById(gotRequestKey.getFriendRequestId()).orElse(null);
+                if (requestingUser != null) {
+                    requestingUser.getFriendRequests().removeIf(frk -> frk.getFriendRequestId().equals(userId));
+                    userRepository.save(requestingUser);
+                }
+            }
+
+            // Finally, delete the user
             userRepository.deleteById(userId);
         }
     }
@@ -167,12 +180,10 @@ public class UsersServiceImpl implements UsersService {
         if (sessionUser == null) {
             return List.of();
         }
-        List<Integer> friendIds = sessionUser.getFriends().stream()
-            .map(UserFriendKey::getFriendId)
-            .collect(Collectors.toList());
-        return userRepository.findByLoginStartingWith(prefix).stream()
-            .filter(user -> !friendIds.contains(user.getId()))
-            .collect(Collectors.toList());
+        List<Integer> friendIds = sessionUser.getFriends().stream().map(UserFriendKey::getFriendId)
+                .collect(Collectors.toList());
+        return userRepository.findByLoginStartingWith(prefix).stream().filter(user -> !friendIds.contains(user.getId()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -289,6 +300,4 @@ public class UsersServiceImpl implements UsersService {
         return false;
     }
 
-   
-    
 }
