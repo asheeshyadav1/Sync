@@ -250,6 +250,7 @@ public class UsersController {
     @ResponseBody
     public List<UserModel> getUsersExcludingSession(HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
+        
         return userService.findAllUsersExcludingSessionUser(sessionUser.getId());
     }
 
@@ -263,6 +264,8 @@ public class UsersController {
 
         // Fetch the users from the service
         List<UserModel> users = userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
+
+        System.out.println("\n\n\n\n" + users + "\n\n\n\n");
 
         // Limit the number of users to 10
         return users.stream().limit(10).collect(Collectors.toList());
