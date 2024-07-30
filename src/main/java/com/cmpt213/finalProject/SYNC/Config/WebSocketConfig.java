@@ -1,4 +1,4 @@
-package com.cmpt213.finalProject.SYNC.config;
+package com.cmpt213.finalProject.SYNC.Config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
