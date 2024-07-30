@@ -75,7 +75,6 @@ public class MessageController {
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
         ChatMessage sentMessage = messageService.sendMessage(currentUser, receiver, content);
-        ChatMessage sentMessagetoUser = messageService.sendMessage(receiver,currentUser,content);
 
         // Convert ChatMessage to ChatMessageDTO
         ChatMessageDTO messageDTO = new ChatMessageDTO();
