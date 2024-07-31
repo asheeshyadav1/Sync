@@ -59,13 +59,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
+                        <a class="nav-link" href="/Dm">Direct Messaging</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/login">Home</a>
                     </li>
                     <li class="nav-item ms-3">
                         <a id="logoutBtn" class="nav-link" href="/userLogout">Logout</a>
                     </li>
                     <li class="nav-item ms-3">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="/login">
                             <img th:src="${user.profilePictureURL != null && !user.profilePictureURL.isEmpty() ? user.profilePictureURL : '/logo/profile logo.png'}"
                                  id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
                         </a>
@@ -82,8 +85,8 @@
             Select Friend
         </button>
         <ul class="dropdown-menu" aria-labelledby="friendsDropdown">
-            <li><a class="dropdown-item" id="user-location" th:data-lat="${user.latitude}" th:data-lon="${user.longitude}">Me</a></li>
-                         <li th:each="friendLocation : ${friendsLocations}">
+            <li><a class="dropdown-item" id="user-location" th:data-lat="${user.latitude}" th:data-lon="${user.longitude}">You</a></li>
+            <li th:each="friendLocation : ${friendsLocations}">
                 <a class="dropdown-item" th:id="'friend-' + ${friendLocation.login}" th:data-lat="${friendLocation.latitude}" th:data-lon="${friendLocation.longitude}" th:text="${friendLocation.login}"></a>
             </li>
         </ul>
@@ -106,7 +109,7 @@
         </div>
     </footer>
 
-    <!-- Modal -->
+    <!-- Modals -->
     <div class="modal fade" id="locationErrorModal" tabindex="-1" aria-labelledby="locationErrorModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -114,8 +117,8 @@
                     <h5 class="modal-title" id="locationErrorModalLabel">Location Error</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    User has chosen not to show location.
+                <div class="modal-body" id="locationErrorMessage">
+                    <!-- Dynamic content will be set by JavaScript -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -125,61 +128,68 @@
     </div>
 
     <script>
-       document.addEventListener("DOMContentLoaded", function() {
-    var mapContainer = document.getElementById('map-container');
-    var map = L.map(mapContainer).setView([51.505, -0.09], 13);
+        document.addEventListener("DOMContentLoaded", function() {
+            var mapContainer = document.getElementById('map-container');
+            var map = L.map(mapContainer).setView([49.2767, -122.9190], 13); // Default SFU location
 
-    L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=1a3450467c924eb6a40d85a2098898bd', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+            L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=1a3450467c924eb6a40d85a2098898bd', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
-    function addMarker(lat, lon, name, iconUrl) {
-        return L.marker([lat, lon], {
-            icon: L.icon({
-                iconUrl: iconUrl,
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            })
-        }).addTo(map).bindPopup(name);
-    }
+            function addMarker(lat, lon, name, iconUrl) {
+                return L.marker([lat, lon], {
+                    icon: L.icon({
+                        iconUrl: iconUrl,
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map).bindPopup(name);
+            }
 
-    var userLocationElement = document.getElementById('user-location');
-    var userLat = parseFloat(userLocationElement.getAttribute('data-lat'));
-    var userLon = parseFloat(userLocationElement.getAttribute('data-lon'));
+            // Handle user location
+            var userLocationElement = document.getElementById('user-location');
+            var userLat = parseFloat(userLocationElement.getAttribute('data-lat'));
+            var userLon = parseFloat(userLocationElement.getAttribute('data-lon'));
 
-    if (userLat && userLon) {
-        map.setView([userLat, userLon], 13);
-        var userMarker = addMarker(userLat, userLon, 'You are here!', 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png');
-        userMarker.openPopup();
-    } else {
-        var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
-        locationErrorModal.show();
-    }
-
-    var friends = document.querySelectorAll('.dropdown-menu li a');
-    friends.forEach(function(friend) {
-        var lat = parseFloat(friend.getAttribute('data-lat'));
-        var lon = parseFloat(friend.getAttribute('data-lon'));
-        var name = friend.textContent.trim();
-
-        if (lat && lon) {
-            var marker = addMarker(lat, lon, name, 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png');
-            friend.addEventListener('click', function() {
-                map.setView([lat, lon], 13);
-                marker.openPopup();
-            });
-        } else {
-            friend.addEventListener('click', function() {
+            if (userLat && userLon) {
+                map.setView([userLat, userLon], 13);
+                var userMarker = addMarker(userLat, userLon, 'You are here!', 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png');
+                userMarker.openPopup();
+            } else {
+                document.getElementById('locationErrorMessage').textContent = 'You have not shared your location. Please go to the Edit Page if you wish to share your location.';
                 var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
                 locationErrorModal.show();
-            });
-        }
-    });
-});
+            }
 
+            // Handle friends' locations
+            var friends = document.querySelectorAll('.dropdown-menu li a');
+            friends.forEach(function(friend) {
+                var lat = parseFloat(friend.getAttribute('data-lat'));
+                var lon = parseFloat(friend.getAttribute('data-lon'));
+                var name = friend.textContent.trim();
+
+                if (lat && lon) {
+                    var marker = addMarker(lat, lon, name, 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png');
+                    friend.addEventListener('click', function() {
+                        map.setView([lat, lon], 13);
+                        marker.openPopup();
+                    });
+                } else {
+                    friend.addEventListener('click', function() {
+                        document.getElementById('locationErrorMessage').textContent = `${name} has chosen not to share their location.`;
+                        var locationErrorModal = new bootstrap.Modal(document.getElementById('locationErrorModal'));
+                        locationErrorModal.show();
+                    });
+                }
+            });
+        });
+
+        document.getElementById('addfriends').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default action of the anchor tag
+            alert('Please add users on the Home page only');
+        });
     </script>
-    
 </body>
 </html>

@@ -1,4 +1,4 @@
-package com.cmpt213.finalProject.SYNC.config;
+package com.cmpt213.finalProject.SYNC.Config;
 
 import java.util.Properties;
 

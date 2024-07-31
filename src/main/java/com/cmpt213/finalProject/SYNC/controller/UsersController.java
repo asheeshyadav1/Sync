@@ -626,5 +626,5 @@ public class UsersController {
 
         return "message"; // Return the name of the view template
     }
-
+    
 }
