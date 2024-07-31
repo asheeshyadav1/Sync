@@ -619,7 +619,7 @@
                         <a id="logoutBtn" class="nav-link" href="/userLogout">Logout</a>
                     </li>
                     <li class="nav-item ms-3">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="/login">
                             <img th:src="${user.profilePictureURL != null && !user.profilePictureURL.isEmpty() ? user.profilePictureURL : '/logo/profile logo.png'}"
                                 id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
                         </a>
@@ -651,7 +651,7 @@
             <div class="col-md-6 offset-md-3">
                 <div class="content-wrapper">
                     <div class="welcome-user">
-                        <p class="custom-lead">Welcome <span th:text="${userLogin}"></span> !</p>
+                        <!-- <p class="custom-lead">Welcome <span th:text="${userLogin}"></span> !</p> -->
                     </div>
                     <div class="requested-friends"></div>
                 </div>
@@ -668,8 +668,6 @@
                             </button>
                         </div>
                     </div>
-
-
 
                     <div id="loadingIndicator" style="display: none;">Loading...</div>
                     <ul class="search-results"></ul>

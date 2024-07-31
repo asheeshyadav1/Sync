@@ -283,13 +283,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
+                        <a class="nav-link" href="/Dm">Direct Messaging</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/login">Home</a>
                     </li>
                     <li class="nav-item ms-3">
                         <a id="logoutBtn" class="nav-link" href="/userLogout">Logout</a>
                     </li>
                     <li class="nav-item ms-3">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="/login">
                             <img th:src="${user.profilePictureURL != null && !user.profilePictureURL.isEmpty() ? user.profilePictureURL : '/logo/profile logo.png'}"
                                  id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
                         </a>
@@ -377,7 +380,7 @@
 <footer>
     <div class="bottom-navigation">
         <a href="/login" class="home"><span class="btn"></span></a>
-        <a href="./Maps.html" class="like"><span class="btn"></span></a>
+        <a href="/getLocation" class="like"><span class="btn"></span></a>
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                 <span class="icon-gear"></span>
@@ -389,6 +392,12 @@
         </div>
         <a id="addfriends" href="#" class="add"><span class="btn"></span></a>
     </div>
+    <script>
+        document.getElementById('addfriends').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default action of the anchor tag
+            alert('Please add users on the Home page only');
+        });
+        </script>
 </footer>
 </body>
 </html>

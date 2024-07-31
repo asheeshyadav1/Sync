@@ -273,13 +273,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
+                        <a class="nav-link" href="/Dm">Direct Messaging</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/login">Home</a>
                     </li>
                     <li class="nav-item ms-3">
                         <a id="logoutBtn" class="nav-link" href="/userLogout">Logout</a>
                     </li>
                     <li class="nav-item ms-3">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="/login">
                             <img th:src="${user.profilePictureURL != null && !user.profilePictureURL.isEmpty() ? user.profilePictureURL : '/logo/profile logo.png'}"
                                  id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
                         </a>
@@ -293,7 +296,7 @@
             <div class="row">
                 <div class="col-md-9">
                     <div id="para">
-                        <form id="editForm" action="/editUser" method="post" th:object="${user}" enctype="multipart/form-data">
+                        <form id="editForm" action="/editUser" method="post" th:object="${user}" enctype="multipart/form-data" onsubmit="return validateLocation()">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -310,9 +313,10 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="location" class="form-label">Location</label>
-                                        <input type="text" class="form-control" id="location" name="location" th:field="*{location}">
-                                        <input type="hidden" id="latitude" name="latitude" th:field="*{latitude}">
-                                        <input type="hidden" id="longitude" name="longitude" th:field="*{longitude}">
+                                        <input type="text" class="form-control" id="location" name="location">
+                                        <input type="hidden" id="latitude" name="latitude">
+                                        <input type="hidden" id="longitude" name="longitude">
+                                        <div id="locationError" style="display:none; color: red;">Please select a valid location from the autocomplete suggestions. Or leave field empty to not share</div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="dob" class="form-label">Date of Birth</label>
@@ -374,34 +378,66 @@
 </div>
 </body>
 <script>
-    function initAutocomplete() {
-        const input = document.getElementById('location');
-        const autocomplete = new google.maps.places.Autocomplete(input, {
-            types: ['address'],
-        });
-    
-        autocomplete.addListener('place_changed', function() {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-                console.log(`Latitude: ${lat}, Longitude: ${lng}`);
-    
-                // Set latitude and longitude values to hidden input fields
-                document.getElementById('latitude').value = lat;
-                document.getElementById('longitude').value = lng;
+function initAutocomplete() {
+    const input = document.getElementById('location');
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ['address'],
+    });
+
+    autocomplete.addListener('place_changed', function() {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            console.log(`Latitude: ${lat}, Longitude: ${lng}`);
+
+            // Set latitude and longitude values to hidden input fields
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+
+            // Hide error message if place is valid
+            document.getElementById('locationError').style.display = 'none';
+        } else {
+            // Hide latitude and longitude if no geometry is found
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+        }
+    });
+}
+
+function validateLocation() {
+    const locationInput = document.getElementById('location').value;
+    const lat = document.getElementById('latitude').value;
+    const lng = document.getElementById('longitude').value;
+
+    // Check if location input is provided but not selected from suggestions
+    if (locationInput && (!lat || !lng)) {
+        document.getElementById('locationError').style.display = 'block';
+        return false;
+    }
+
+    return true;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initAutocomplete();
+
+    // Add form validation on submit
+    const form = document.getElementById('editForm');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (!validateLocation()) {
+                event.preventDefault(); // Prevent form submission if validation fails
             }
         });
     }
+});
+</script>
     
-    document.addEventListener('DOMContentLoaded', function() {
-        initAutocomplete();
-    });
-    </script>
 <footer>
     <div class="bottom-navigation">
         <a href="/login" class="home"><span class="btn"></span></a>
-        <a href="./Maps.html" class="like"><span class="btn"></span></a>
+        <a href="/getLocation" class="like"><span class="btn"></span></a>
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                 <span class="icon-gear"></span>
@@ -413,5 +449,11 @@
         </div>
         <a id="addfriends" href="#" class="add"><span class="btn"></span></a>
     </div>
+    <script>
+        document.getElementById('addfriends').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default action of the anchor tag
+            alert('Please add users on the Home page only');
+        });
+        </script>
 </footer>
 </html>

@@ -1,12 +1,1 @@
-Things to be done or fixed
-- 2MFA (Yinka) 
-- Direct Messaging (Tushar) 
-- Phone number field on IntroPage Form
-- View page after you edit your profile and press save changes(optional) 
-- Making sure every page access the navigation bar tabs
-  - also make sure you can do all bottom nav commands on any page(e.g Be on Maps page and click on friends Req Page) 
-- Make sure Session is Cleared using Cookies
-- Create Tests for each feature
-  - login(done)
-  - add post(done)
-  - 4 more
+
