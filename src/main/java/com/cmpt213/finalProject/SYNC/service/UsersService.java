@@ -11,7 +11,7 @@ import com.cmpt213.finalProject.SYNC.models.UserModel;
 
 @Service
 public interface UsersService {
-    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL, Double latitude, Double longitude);
+    UserModel registerUser(String login, String password, String email, String name ,String gender, String dob, String location, String phoneNumber, String profilePictureURL, Double latitude, Double longitude,  String siteURL);
     UserModel authentication(String login, String password);
     List<UserModel> getAllUsers();
     void deactivateUser(Integer id);
@@ -33,7 +33,7 @@ public interface UsersService {
     public void deleteUserByIdAndRemoveFromFriends(Integer userId);
 
     @Transactional(readOnly = true)
-    public List<UserModel> findAllUsersStartingWithExcludingFriends(String prefix, Integer sessionUserId);
+    public List<UserDTO> findAllUsersStartingWithExcludingFriends(String prefix, Integer sessionUserId);
 
     @Transactional(readOnly = true)
     public List<UserModel> findAllUsersExcludingSessionUser(Integer sessionUserId);
@@ -44,7 +44,7 @@ public interface UsersService {
     public boolean acceptFriendRequest(Integer userId, Integer friendRequestId);
 
     @Transactional(readOnly = true)
-    public List<UserModel> findGotFriendRequests(UserModel sessionUser);
+    public List<friendDTO> findGotFriendRequests(UserModel sessionUser);
 
    
     @Transactional(readOnly = true)

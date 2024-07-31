@@ -14,6 +14,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +35,10 @@ import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 // import com.cmpt213.finalProject.SYNC.service.ChatMessageService;
 import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
+import com.cmpt213.finalProject.SYNC.service.SendOtpToMailService;
+import com.cmpt213.finalProject.SYNC.service.UserDTO;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
+import com.cmpt213.finalProject.SYNC.service.friendDTO;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,10 +58,10 @@ public class UsersController {
     private PostService postService;
 
     @Autowired
-    private ImgurService imgurService;
+    private UserRepo userRepoMaps;
 
     @Autowired
-    private UserRepo userRepoMaps;
+    private SendOtpToMailService sendOtpToMailService;
 
     @GetMapping("/")
     public String getHomePage() {
@@ -119,11 +123,16 @@ public class UsersController {
         userModel.setProfilePictureURL("");
         userModel.setLongitude(0.0);
         userModel.setLatitude(0.0);
+        String token = sendOtpToMailService.generateToken();
+        userModel.setToken(token);
 
         UserModel registeredUser = userService.registerUser(userModel.getLogin(), userModel.getPassword(),
                 userModel.getEmail(), userModel.getName(), userModel.getGender(), userModel.getDob(),
                 userModel.getLocation(), userModel.getPhoneNumber(), userModel.getProfilePictureURL(),
-                userModel.getLatitude(), userModel.getLongitude());
+                userModel.getLatitude(), // Add latitude
+                userModel.getLongitude(), // Add longitude
+                getSiteURL(request) // Add siteURL
+        );
 
         if (registeredUser == null) {
             System.out.println("Registration failed: duplicate user or invalid data");
@@ -131,8 +140,35 @@ public class UsersController {
         }
 
         model.addAttribute("userLogin", userModel.getLogin());
-        request.getSession().setAttribute("session_user", userModel);
-        return "redirect:/intro";
+        return "redirect:/register_success";
+    }
+
+    private String getSiteURL(HttpServletRequest request) {
+        String siteURL = request.getRequestURL().toString();
+        return siteURL.replace(request.getServletPath(), "");
+    }
+
+    @GetMapping("/register_success")
+    public String registerSuccess() {
+        return "register_success";
+    }
+
+    @GetMapping("/verify")
+    public String verifyUser(@RequestParam("code") String code, Model model) {
+        Optional<UserModel> optionalUser = userRepository.findByToken(code);
+
+        if (optionalUser.isPresent()) {
+            UserModel user = optionalUser.get();
+            user.setToken(null); // Clear the token
+            user.setEnabled(true); // Mark the user as verified (assuming you have an 'enabled' field)
+            userRepository.save(user); // Save the updated user record
+
+            model.addAttribute("message", "Your account has been successfully verified.");
+            return "verify_success"; // Redirect or render a success page
+        } else {
+            model.addAttribute("error", "Invalid verification token.");
+            return "verify_fail"; // Redirect or render a failure page
+        }
     }
 
     @PostMapping("/login")
@@ -144,8 +180,14 @@ public class UsersController {
 
         if (authenticate != null) {
             if (authenticate.isActive()) {
-                request.getSession().setAttribute("session_user", authenticate); 
-                return "redirect:/login";
+                if (authenticate.isEnabled()) {
+                    request.getSession().setAttribute("session_user", authenticate); // Store authenticated user with ID
+                    return "redirect:/login";
+                } else {
+                    model.addAttribute("error",
+                            "your account has not been verified, check your email to verify your account");
+                    return "verify_fail";
+                }
             } else {
                 model.addAttribute("error", "You have been deactivated. Please contact admin!");
                 return "login_page";
@@ -250,25 +292,24 @@ public class UsersController {
     @ResponseBody
     public List<UserModel> getUsersExcludingSession(HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-        
+
+        System.out.println("\n\n\n\n" + userService.findAllUsersExcludingSessionUser(sessionUser.getId()));
         return userService.findAllUsersExcludingSessionUser(sessionUser.getId());
     }
 
     @GetMapping("/getUsersStartingWith")
     @ResponseBody
-    public List<UserModel> getUsersStartingWith(@RequestParam String prefix, HttpSession session) {
+    public List<UserDTO> getUsersStartingWith(@RequestParam String prefix, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         if (sessionUser == null) {
             return List.of();
         }
 
-        // Fetch the users from the service
-        List<UserModel> users = userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
+        List<UserDTO> users = userService.findAllUsersStartingWithExcludingFriends(prefix, sessionUser.getId());
 
-        System.out.println("\n\n\n\n" + users + "\n\n\n\n");
+        users.forEach(user -> System.out.println("Fetched User: " + user.getLogin() + ", ID: " + user.getId()));
 
-        // Limit the number of users to 10
-        return users.stream().limit(10).collect(Collectors.toList());
+        return users.stream().limit(3).collect(Collectors.toList());
     }
 
     @GetMapping("/userEditAccount")
@@ -460,10 +501,8 @@ public class UsersController {
     @PostMapping("/acceptRequest/{id}")
     @ResponseBody
     public Map<String, String> acceptRequest(@PathVariable Integer id, HttpSession session) {
-
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-        System.out.println("\n\n\n\n" + id + "   \n\n" + sessionUser.getId() + "\n\n\n");
-        boolean requestAccepted = userService.acceptFriendRequest(sessionUser.getId(), id);
+        boolean requestAccepted = userService.acceptFriendRequest(sessionUser.getId().intValue(), id);
         Map<String, String> response = new HashMap<>();
         if (requestAccepted) {
             response.put("status", "Request Accepted");
@@ -477,7 +516,7 @@ public class UsersController {
     @ResponseBody
     public Map<String, String> declineRequest(@PathVariable Integer id, HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-        boolean requestDeclined = userService.declineFriendRequest(sessionUser.getId(), id);
+        boolean requestDeclined = userService.declineFriendRequest(sessionUser.getId().intValue(), id);
         Map<String, String> response = new HashMap<>();
         if (requestDeclined) {
             response.put("status", "Request Declined");
@@ -489,7 +528,7 @@ public class UsersController {
 
     @GetMapping("/getFriendRequests")
     @ResponseBody
-    public List<UserModel> getFriendRequests(HttpSession session) {
+    public List<friendDTO> getFriendRequests(HttpSession session) {
         UserModel sessionUser = (UserModel) session.getAttribute("session_user");
         sessionUser = userService.findByIdWithFriendRequests(sessionUser.getId().longValue());
         return userService.findGotFriendRequests(sessionUser);
@@ -549,75 +588,6 @@ public class UsersController {
 
         return "Maps";
     }
-
-    // @GetMapping("/friends")
-    // public String getFriends(Model model, HttpSession session) {
-    // UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-
-    // if (sessionUser == null) {
-    // return "redirect:/login";
-    // }
-
-    // UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
-    // if (user == null) {
-    // return "redirect:/login";
-    // }
-
-    // // Assuming you have a method to retrieve all friends
-    // List<UserFriendKey> friends = user.getFriends();
-
-    // // Extract friends' locations
-    // List<Map<String, Object>> friendMessages = friends.stream()
-    // .map(friend -> {
-    // UserModel friendUser =
-    // userRepository.findById(friend.getFriendId()).orElse(null);
-    // if (friendUser != null) {
-    // Map<String, Object> friendsmessage = new HashMap<>();
-    // friendsmessage.put("login", friendUser.getLogin());
-    // friendsmessage.put("Id", friendUser.getId());
-    // return friendsmessage;
-    // }
-    // return null;
-    // })
-    // .filter(Objects::nonNull)
-    // .collect(Collectors.toList());
-
-    // model.addAttribute("user", user);
-    // model.addAttribute("friends", friends);
-    // model.addAttribute("friendMessages", friendMessages);
-
-    // return "friends"; // Return the name of the view template
-    // }
-
-    // @PostMapping("/sendMessage")
-    // public String sendMessage(Model model, HttpSession session, @RequestParam
-    // Integer receiverId, @RequestParam String content) {
-    // UserModel sessionUser = (UserModel) session.getAttribute("session_user");
-
-    // if (sessionUser == null) {
-    // return "redirect:/login";
-    // }
-
-    // UserModel user = userRepository.findById(sessionUser.getId()).orElse(null);
-    // if (user == null) {
-    // return "redirect:/login";
-    // }
-
-    // List<UserModel> receiver_all =
-    // userRepository.findByFriendsUserId(receiverId);
-
-    // UserModel receiver = receiver_all.get(0);
-
-    // if (receiver != null) {
-    // chatMessageService.sendMessage(user, receiver, content);
-    // } else {
-    // // Handle the case where the receiver is not found
-    // model.addAttribute("error", "Receiver not found");
-    // return "errorPage"; // Redirect to an error page or handle accordingly
-    // }
-
-    // return "redirect:/directMessaging"; // Redirect to the direct messaging page
-    // }
 
     @GetMapping("/Dm")
     public String getFriends(Model model, HttpSession session) {

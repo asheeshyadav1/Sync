@@ -2,6 +2,9 @@ package com.cmpt213.finalProject.SYNC.models;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -9,6 +12,7 @@ import jakarta.persistence.*;
 public class UserModel {
 
     public UserModel() {
+        this.enabled = Boolean.FALSE;
     }
 
     @Id
@@ -27,6 +31,8 @@ public class UserModel {
     String profilePictureURL;
     Double latitude;
     Double longitude;
+    String token;
+    Boolean enabled;
 
     @ElementCollection
     @CollectionTable(name = "user_friends", joinColumns = @JoinColumn(name = "user_id"))
@@ -52,6 +58,8 @@ public class UserModel {
     })
     List<UserFriendRequestKey> gotFriendRequests = new ArrayList<>();
 
+    //[UserModel [id=54, login=gabbiharkaran@gmail.com, email=gabbiharkaran@gmail.com, isAdmin=true, isActive=true]]
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<UserPost> userPosts = new ArrayList<>();
@@ -62,7 +70,7 @@ public class UserModel {
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatMessage> receivedMessages = new ArrayList<>();
 
-    public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL) {
+    public UserModel(String login, String password, String email, String name, boolean isAdmin, boolean isActive, String gender, String dob, String location, String phoneNumber, String profilePictureURL,boolean enabled, String token) {
         this.login = login;
         this.password = password;
         this.email = email;
@@ -74,6 +82,8 @@ public class UserModel {
         this.location = location;
         this.phoneNumber = phoneNumber;
         this.profilePictureURL = profilePictureURL;
+        this.token = token;
+        this.enabled = enabled;
     }
 
     // Getters and Setters
@@ -168,6 +178,13 @@ public class UserModel {
     public List<UserFriendKey> getFriends() {
         return friends;
     }
+    
+    public String getToken() {
+        return token;
+    }
+    public void setToken(String token) {
+        this.token = token;
+    }
 
     public void setFriends(List<UserFriendKey> friends) {
         this.friends = friends;
@@ -260,5 +277,13 @@ public class UserModel {
             hashedPass.append(c).append(asciiValue).append(twoPowerAscii);
         }
         return hashedPass.toString();
+    }
+
+    public boolean isEnabled() {
+        return enabled != null && enabled;
+    }
+    
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 }

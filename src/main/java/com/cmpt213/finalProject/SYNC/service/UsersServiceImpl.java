@@ -1,6 +1,5 @@
 package com.cmpt213.finalProject.SYNC.service;
 
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,8 +18,6 @@ import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
-
-
 @Service
 public class UsersServiceImpl implements UsersService {
 
@@ -33,12 +30,13 @@ public class UsersServiceImpl implements UsersService {
     @Autowired
     private ImgurService imgurService;
 
-    
-   
+    @Autowired
+    private SendOtpToMailService sendOtpToMailService;
 
     @Override
     public UserModel registerUser(String login, String password, String email, String name, String gender, String dob,
-            String location, String phoneNumber, String profilePictureURL, Double latitude, Double longitude) {
+            String location, String phoneNumber, String profilePictureURL, Double latitude, Double longitude,
+            String siteURL) {
         if (login == null || password == null) {
             System.out.println("Registration failed: login or password is null");
             return null;
@@ -60,6 +58,11 @@ public class UsersServiceImpl implements UsersService {
             user.setProfilePictureURL(profilePictureURL);
             user.setLatitude(latitude);
             user.setLongitude(longitude);
+
+            String token = sendOtpToMailService.generateToken();
+            user.setToken(token);
+
+            sendOtpToMailService.sendOtpService(email, siteURL, user);
 
             return userRepository.save(user);
         }
@@ -94,7 +97,8 @@ public class UsersServiceImpl implements UsersService {
     }
 
     // Method to update user information
-    public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location, Double latitude, Double longitude) {
+    public UserModel updateUser(String login, String dob, String gender, String phoneNumber, String location,
+            Double latitude, Double longitude) {
         Optional<UserModel> optionalUser = userRepository.findByLogin(login);
 
         System.out.println(login);
@@ -114,9 +118,10 @@ public class UsersServiceImpl implements UsersService {
         }
         return null; // Handle case where user is not found
     }
+
     public String updateProfilePicture(String login, MultipartFile image) {
         UserModel user = userRepository.findByLogin(login).orElseThrow(() -> new RuntimeException("User not found"));
-        String ppURL= imgurService.uploadImage(image);
+        String ppURL = imgurService.uploadImage(image);
         if (user != null) {
             // Update the user's profile picture URL
             user.setProfilePictureURL(ppURL);
@@ -133,10 +138,9 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserFriendKey> getAllFriends(UserModel sessionUser){
+    public List<UserFriendKey> getAllFriends(UserModel sessionUser) {
         return sessionUser.getFriends();
     }
-  
 
     public void deleteUserById(Integer userId) {
         userRepository.deleteById(userId);
@@ -162,17 +166,16 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserModel> findAllUsersStartingWithExcludingFriends(String prefix, Integer sessionUserId) {
+    public List<UserDTO> findAllUsersStartingWithExcludingFriends(String prefix, Integer sessionUserId) {
         UserModel sessionUser = userRepository.findById(sessionUserId).orElse(null);
         if (sessionUser == null) {
             return List.of();
         }
-        List<Integer> friendIds = sessionUser.getFriends().stream()
-            .map(UserFriendKey::getFriendId)
-            .collect(Collectors.toList());
-        return userRepository.findByLoginStartingWith(prefix).stream()
-            .filter(user -> !friendIds.contains(user.getId()))
-            .collect(Collectors.toList());
+        List<Integer> friendIds = sessionUser.getFriends().stream().map(UserFriendKey::getFriendId)
+                .collect(Collectors.toList());
+
+        return userRepository.findByLoginStartingWith(prefix).stream().filter(user -> !friendIds.contains(user.getId()))
+                .map(user -> new UserDTO(user.getId(), user.getLogin(), user.getEmail())).collect(Collectors.toList());
     }
 
     @Override
@@ -195,11 +198,13 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserModel> findGotFriendRequests(UserModel sessionUser) {
+    public List<friendDTO> findGotFriendRequests(UserModel sessionUser) {
         List<UserFriendRequestKey> gotFriendRequestIds = sessionUser.getGotFriendRequests();
 
         return gotFriendRequestIds.stream().map(key -> userRepository.findById(key.getFriendRequestId()).orElse(null))
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                .filter(Objects::nonNull).map(user -> new friendDTO(user.getId(), user.getLogin())) // Convert to
+                                                                                                    // UserDTO
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -241,14 +246,12 @@ public class UsersServiceImpl implements UsersService {
     public boolean acceptFriendRequest(Integer userId, Integer friendRequestId) {
         UserModel user = userRepository.findById(userId).orElse(null);
         UserModel friend = userRepository.findById(friendRequestId).orElse(null);
-
         if (user != null && friend != null) {
-            UserFriendRequestKey friendRequestKey = new UserFriendRequestKey(userId, friendRequestId);
-            if (user.getGotFriendRequests().remove(friendRequestKey)) {
-
-                System.out.println(user.getEmail());
-                System.out.println(friend.getEmail());
-
+            // Remove the friend request
+            UserFriendRequestKey key = new UserFriendRequestKey(friendRequestId, userId);
+            UserFriendRequestKey key1 = new UserFriendRequestKey(userId,friendRequestId );
+            if (friend.getFriendRequests().remove(key) && user.getGotFriendRequests().remove(key1)) {
+                // Add to friends list
                 user.getFriends().add(new UserFriendKey(userId, friendRequestId));
                 friend.getFriends().add(new UserFriendKey(friendRequestId, userId));
                 userRepository.save(user);
@@ -259,16 +262,23 @@ public class UsersServiceImpl implements UsersService {
         return false;
     }
 
+
     @Transactional
     public boolean declineFriendRequest(Integer userId, Integer friendRequestId) {
         UserModel user = userRepository.findById(userId).orElse(null);
 
-        if (user != null) {
-            UserFriendRequestKey friendRequestKey = new UserFriendRequestKey(userId, friendRequestId);
-            if (user.getGotFriendRequests().remove(friendRequestKey)) {
-                userRepository.save(user);
-                return true;
-            }
+        if (user == null) {
+            System.out.println("User is null.");
+            return false;
+        }
+
+        UserFriendRequestKey friendRequestKey = new UserFriendRequestKey(userId, friendRequestId);
+        if (user.getGotFriendRequests().remove(friendRequestKey)) {
+            userRepository.save(user);
+            System.out.println("Friend request declined and removed.");
+            return true;
+        } else {
+            System.out.println("Friend request key not found in user's received requests.");
         }
         return false;
     }
@@ -289,6 +299,4 @@ public class UsersServiceImpl implements UsersService {
         return false;
     }
 
-   
-    
 }

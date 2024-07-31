@@ -416,19 +416,21 @@
             const requestedFriendsContainer = document.querySelector('.requested-friends');
             let requestedFriends = [];
 
+            // Fetch friend requests and populate the requestedFriends array
             function fetchRequestedFriends() {
                 $.ajax({
                     url: '/getSendRequestFriends',
                     method: 'GET',
                     success: function (response) {
-                        requestedFriends = response;
-                        requestedFriendsContainer.innerHTML = 'Users who have received friend requests: ' + response.join(', ');
+                        requestedFriends = response || []; // Default to empty array if response is null
+                        requestedFriendsContainer.innerHTML = 'Users who have received friend requests: ' + requestedFriends.join(', ');
                     },
                     error: function () {
                         alert('Error fetching friend requests.');
                     }
                 });
             }
+
 
             fetchRequestedFriends();
 
@@ -441,52 +443,61 @@
                         method: 'GET',
                         data: { prefix: query },
                         success: function (response) {
-                            resultsList.innerHTML = '';
-                            response.slice(0, 10).forEach(user => {
-                                const hasSentRequest = requestedFriends.includes(user.id);
-                                const buttonClass = hasSentRequest ? 'btn-danger' : 'btn-primary';
-                                const buttonText = hasSentRequest ? 'Request Sent' : 'Send Request';
-                                const listItem = document.createElement('li');
-                                listItem.innerHTML = `
+                            console.log('Received response:', response); // Logging for debugging
+                            resultsList.innerHTML = ''; // Clear previous results
+
+                            if (response.length === 0) {
+                                resultsList.innerHTML = '<li>No users found</li>';
+                            } else {
+                                response.slice(0, 10).forEach(user => {
+                                    const hasSentRequest = requestedFriends.includes(user.id);
+                                    const buttonClass = hasSentRequest ? 'btn-danger' : 'btn-primary';
+                                    const buttonText = hasSentRequest ? 'Request Sent' : 'Send Request';
+                                    const listItem = document.createElement('li');
+                                    listItem.innerHTML = `
                             <span>${user.login}</span>
                             <button class="btn ${buttonClass} btn-sm send-request-btn" data-id="${user.id}">${buttonText}</button>
                         `;
-                                resultsList.appendChild(listItem);
-                            });
+                                    resultsList.appendChild(listItem);
+                                });
 
-                            document.querySelectorAll('.send-request-btn').forEach(button => {
-                                button.addEventListener('click', function () {
-                                    const userId = this.getAttribute('data-id');
-                                    $.ajax({
-                                        url: `/sendRequest/${userId}`,
-                                        method: 'POST',
-                                        success: function (response) {
-                                            if (response.status === 'Request Sent') {
-                                                button.textContent = 'Request Sent';
-                                                button.classList.remove('btn-primary');
-                                                button.classList.add('btn-danger');
-                                                requestedFriends.push(parseInt(userId));
-                                            } else if (response.status === 'Request Deleted') {
-                                                button.textContent = 'Send Request';
-                                                button.classList.remove('btn-danger');
-                                                button.classList.add('btn-primary');
-                                                const index = requestedFriends.indexOf(parseInt(userId));
-                                                if (index > -1) {
-                                                    requestedFriends.splice(index, 1);
+                                document.querySelectorAll('.send-request-btn').forEach(button => {
+                                    button.addEventListener('click', function () {
+                                        const userId = this.getAttribute('data-id');
+                                        $.ajax({
+                                            url: `/sendRequest/${userId}`,
+                                            method: 'POST',
+                                            success: function (response) {
+                                                console.log('Send request response:', response); // Logging for debugging
+                                                if (response.status === 'Request Sent') {
+                                                    button.textContent = 'Request Sent';
+                                                    button.classList.remove('btn-primary');
+                                                    button.classList.add('btn-danger');
+                                                    requestedFriends.push(parseInt(userId));
+                                                } else if (response.status === 'Request Deleted') {
+                                                    button.textContent = 'Send Request';
+                                                    button.classList.remove('btn-danger');
+                                                    button.classList.add('btn-primary');
+                                                    const index = requestedFriends.indexOf(parseInt(userId));
+                                                    if (index > -1) {
+                                                        requestedFriends.splice(index, 1);
+                                                    }
+                                                } else {
+                                                    alert(response.status);
                                                 }
-                                            } else {
-                                                alert(response.status);
+                                            },
+                                            error: function () {
+                                                alert('Error sending/deleting friend request.');
                                             }
-                                        },
-                                        error: function () {
-                                            alert('Error sending/deleting friend request.');
-                                        }
+                                        });
                                     });
                                 });
-                            });
+
+                            }
                             loadingIndicator.style.display = 'none'; // Hide loading indicator
                         },
-                        error: function () {
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error('Error fetching users:', textStatus, errorThrown);
                             alert('Error fetching users.');
                             loadingIndicator.style.display = 'none'; // Hide loading indicator
                         }
@@ -495,6 +506,7 @@
                     resultsList.innerHTML = '';
                 }
             });
+
 
 
             const deleteAccountBtn = document.querySelector('#deleteAccountBtn');
@@ -520,6 +532,7 @@
                     url: '/getFriendRequests',
                     method: 'GET',
                     success: function (response) {
+                        console.log(response);
                         const friendRequestsList = document.querySelector('#friendRequestsList');
                         friendRequestsList.innerHTML = ''; // Clear previous requests
                         response.forEach(user => {
@@ -533,7 +546,6 @@
                             friendRequestsList.appendChild(listItem);
                         });
 
-                        // Add click event listeners to the new buttons
                         document.querySelectorAll('.accept-request-btn').forEach(button => {
                             button.addEventListener('click', function () {
                                 const userId = this.getAttribute('data-id');
@@ -553,6 +565,7 @@
                                 });
                             });
                         });
+
 
                         document.querySelectorAll('.decline-request-btn').forEach(button => {
                             button.addEventListener('click', function () {
@@ -608,7 +621,7 @@
                     <li class="nav-item ms-3">
                         <a class="nav-link" href="#">
                             <img th:src="${user.profilePictureURL != null && !user.profilePictureURL.isEmpty() ? user.profilePictureURL : '/logo/profile logo.png'}"
-                                 id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
+                                id="profilePicture" alt="Profile Picture" class="rounded-circle" width="40" height="40">
                         </a>
                     </li>
                 </ul>
