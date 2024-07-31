@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import com.cmpt213.finalProject.SYNC.models.UserModel;
 import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
+import com.cmpt213.finalProject.SYNC.service.UserDTO;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
 
 @WebMvcTest(UsersController.class)
@@ -32,41 +34,28 @@ public class SeeProfileController {
     @MockBean
     private UsersService userService;
 
-    //@MockBean
-    //private UserModel userModel;
-
     @MockBean
     private PostService postService;
 
     @MockBean
     private ImgurService imgurService;
     
-
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void testMaps() throws Exception {
-
-
+    void testGetAllUsers() throws Exception {
         UserModel u1 = new UserModel();
         u1.setLogin("Spiderman");
-        String hashedPassword = UserModel.hashFunc("1234");
-        u1.setPassword(hashedPassword);
-       
-        //UserModel u3 = userService.registerUser("Spiderman", hashedPassword,"y@gmail.com", "Asheesh","Male", "1999-01-01", "Vancouver", "1234567890");
-
+        u1.setPassword(UserModel.hashFunc("1234"));
+        u1.setEmail("spiderman@gmail.com");
+        u1.setName("Peter Parker");
 
         UserModel u2 = new UserModel();
         u2.setLogin("Lepookie");
-        u2.setPassword(hashedPassword);
+        u2.setPassword(UserModel.hashFunc("1234"));
         u2.setEmail("lebron@gmail.com");
-        u2.setName("goat");
-        u2.setGender("male");
-        u2.setDob("1999-01-01");
-        u2.setLocation("Vancouver");
-        u2.setPhoneNumber("1234567890");
-
+        u2.setName("LeBron James");
 
         List<UserModel> users = new ArrayList<>();
         users.add(u1);
@@ -74,14 +63,55 @@ public class SeeProfileController {
 
         when(userRepository.findAll()).thenReturn(users);
 
-        //Put the testing with the backend here
-       
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/view"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.view().name("showAll"))
+            .andExpect(MockMvcResultMatchers.model().attributeExists("us"))
+            .andExpect(MockMvcResultMatchers.model().attribute("us", users));
     }
-    
+
     @Test
     void testGetLogin() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/login"))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andExpect(MockMvcResultMatchers.view().name("login_page"));
+    }
+
+    @Test
+    void testVerifyUser() throws Exception {
+        String token = "verification-token";
+        UserModel user = new UserModel();
+        user.setToken(token);
+        user.setEnabled(false);
+
+        when(userRepository.findByToken(token)).thenReturn(Optional.of(user));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/verify").param("code", token))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.view().name("verify_success"))
+            .andExpect(MockMvcResultMatchers.model().attribute("message", "Your account has been successfully verified."));
+    }
+
+    @Test
+    void testGetUsersStartingWith() throws Exception {
+        UserModel sessionUser = new UserModel();
+        sessionUser.setId(1);
+        sessionUser.setLogin("SessionUser");
+
+        UserModel u1 = new UserModel();
+        u1.setLogin("Alice");
+
+        UserModel u2 = new UserModel();
+        u2.setLogin("Alex");
+
+        List<UserDTO> users = List.of(new UserDTO(u1), new UserDTO(u2));
+
+        when(userService.findAllUsersStartingWithExcludingFriends("Al", 1)).thenReturn(users);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/getUsersStartingWith").param("prefix", "Al"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.content().contentType(APPLICATION_JSON_UTF8))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].login").value("Alice"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].login").value("Alex"));
     }
 }

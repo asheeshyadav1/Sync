@@ -32,30 +32,22 @@ public class LogoutController {
     @MockBean
     private UsersService userService;
 
-    //@MockBean
-    //private UserModel userModel;
-
     @MockBean
     private PostService postService;
 
     @MockBean
     private ImgurService imgurService;
     
-
     @Autowired
     private MockMvc mockMvc;
 
     @Test
     void testMaps() throws Exception {
-
-
+        // Example data setup
         UserModel u1 = new UserModel();
         u1.setLogin("Spiderman");
         String hashedPassword = UserModel.hashFunc("1234");
         u1.setPassword(hashedPassword);
-       
-        //UserModel u3 = userService.registerUser("Spiderman", hashedPassword,"y@gmail.com", "Asheesh","Male", "1999-01-01", "Vancouver", "1234567890");
-
 
         UserModel u2 = new UserModel();
         u2.setLogin("Lepookie");
@@ -67,15 +59,11 @@ public class LogoutController {
         u2.setLocation("Vancouver");
         u2.setPhoneNumber("1234567890");
 
-
         List<UserModel> users = new ArrayList<>();
         users.add(u1);
         users.add(u2);
 
         when(userRepository.findAll()).thenReturn(users);
-
-        //Put the testing with the backend here
-       
     }
     
     @Test
@@ -85,4 +73,10 @@ public class LogoutController {
             .andExpect(MockMvcResultMatchers.view().name("login_page"));
     }
 
+    @Test
+    void testUserLogout() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/userLogout"))
+            .andExpect(MockMvcResultMatchers.status().is3xxRedirection())
+            .andExpect(MockMvcResultMatchers.redirectedUrl("/login"));
+    }
 }

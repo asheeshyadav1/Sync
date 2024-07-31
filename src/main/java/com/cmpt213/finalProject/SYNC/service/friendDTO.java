@@ -13,6 +13,10 @@ public class friendDTO {
         this.login = login;
     }
 
+    public friendDTO(String string, String string2) {
+        //TODO Auto-generated constructor stub
+    }
+
     public Integer getId() {
         return id;
     }

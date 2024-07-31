@@ -1,7 +1,7 @@
 package com.cmpt213.finalProject.SYNC.controllers;
 
 import static org.mockito.Mockito.when;
-
+import static org.hamcrest.Matchers.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +21,7 @@ import com.cmpt213.finalProject.SYNC.repository.UserRepository;
 import com.cmpt213.finalProject.SYNC.service.ImgurService;
 import com.cmpt213.finalProject.SYNC.service.PostService;
 import com.cmpt213.finalProject.SYNC.service.UsersService;
+import com.cmpt213.finalProject.SYNC.service.friendDTO;
 
 @WebMvcTest(UsersController.class)
 public class SeeFriendsReqController {
@@ -32,52 +33,38 @@ public class SeeFriendsReqController {
     @MockBean
     private UsersService userService;
 
-    //@MockBean
-    //private UserModel userModel;
-
     @MockBean
     private PostService postService;
 
     @MockBean
     private ImgurService imgurService;
-    
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void testMaps() throws Exception {
-
-
+    void testGetFriendRequests() throws Exception {
+        // Mock user data
         UserModel u1 = new UserModel();
         u1.setLogin("Spiderman");
-        String hashedPassword = UserModel.hashFunc("1234");
-        u1.setPassword(hashedPassword);
-       
-        //UserModel u3 = userService.registerUser("Spiderman", hashedPassword,"y@gmail.com", "Asheesh","Male", "1999-01-01", "Vancouver", "1234567890");
+        u1.setPassword(UserModel.hashFunc("1234"));
+        u1.setId(1);
 
+        // Mock friendDTO data
+        List<friendDTO> friendRequests = new ArrayList<>();
+        friendRequests.add(new friendDTO("Lepookie", "lebron@gmail.com"));
 
-        UserModel u2 = new UserModel();
-        u2.setLogin("Lepookie");
-        u2.setPassword(hashedPassword);
-        u2.setEmail("lebron@gmail.com");
-        u2.setName("goat");
-        u2.setGender("male");
-        u2.setDob("1999-01-01");
-        u2.setLocation("Vancouver");
-        u2.setPhoneNumber("1234567890");
+        // Mock the service call to return the friendDTO list
+        when(userService.findGotFriendRequests(u1)).thenReturn(friendRequests);
 
-
-        List<UserModel> users = new ArrayList<>();
-        users.add(u1);
-        users.add(u2);
-
-        when(userRepository.findAll()).thenReturn(users);
-
-        //Put the testing with the backend here
-       
+        // Test the controller method
+        mockMvc.perform(MockMvcRequestBuilders.get("/getFriendRequests")
+                .sessionAttr("session_user", u1))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.length()", is(friendRequests.size())))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].login", is("Lepookie")));
     }
-    
+
     @Test
     void testGetLogin() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/login"))
